@@ -19,7 +19,14 @@
       "Bash(rm \"c:\\\\Users\\\\a\\\\Desktop\\\\NEXO\\\\nexocode\\\\src\\\\app\\\\api\\\\tracking\\\\route.ts\")",
       "Bash(rmdir \"c:\\\\Users\\\\a\\\\Desktop\\\\NEXO\\\\nexocode\\\\src\\\\app\\\\api\\\\tracking\")",
       "Bash(rmdir \"c:\\\\Users\\\\a\\\\Desktop\\\\NEXO\\\\nexocode\\\\src\\\\app\\\\api\")",
-      "Bash(rm \"c:\\\\Users\\\\a\\\\Desktop\\\\NEXO\\\\nexocode\\\\.env.local\")"
+      "Bash(rm \"c:\\\\Users\\\\a\\\\Desktop\\\\NEXO\\\\nexocode\\\\.env.local\")",
+      "Bash(xargs wc *)",
+      "Bash(xargs cat *)",
+      "Bash(npx tsc *)",
+      "Bash(tee build.log)",
+      "Bash(timeout 120 bash -c 'while ps aux | grep -q \"[n]pm run build\"; do sleep 2; done')",
+      "Bash(find /c/Users/a/Desktop/NEXO/nexocode/src/components -name \"*.tsx\" -exec wc -l {} +)",
+      "Bash(npx kill-port *)"
     ]
   }
 }

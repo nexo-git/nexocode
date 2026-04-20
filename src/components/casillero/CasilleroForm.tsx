@@ -110,7 +110,7 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Móvil <span className="text-status-red">*</span></label>
-          <input className={inputClass} placeholder="+506 8888-0000" {...register('movil')} />
+          <input className={inputClass} placeholder="+506 8765-4321" {...register('movil')} />
           {errors.movil && <p className={errorClass}>{errors.movil.message}</p>}
         </div>
         <div>

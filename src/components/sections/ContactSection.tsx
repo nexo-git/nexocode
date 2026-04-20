@@ -6,7 +6,7 @@ const contactItems = [
   {
     icon: MessageCircle,
     label: 'WhatsApp',
-    value: '+506 8888-0000',
+    value: '+506 6113-2863',
     description: 'Respuesta en menos de 1 hora en horario laboral.',
     cta: { label: 'Escribir ahora', href: whatsappLink('Hola nexo, quiero más información.') },
   },
