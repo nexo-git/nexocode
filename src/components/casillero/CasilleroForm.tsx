@@ -89,7 +89,7 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Nombre <span className="text-status-red">*</span></label>
-          <input className={inputClass} placeholder="Alejandro" {...register('nombre')} />
+          <input className={inputClass} placeholder="" {...register('nombre')} />
           {errors.nombre && <p className={errorClass}>{errors.nombre.message}</p>}
         </div>
         <div>
@@ -98,7 +98,7 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
           </label>
           <input
             className={inputClass + (tipo === 'empresa' ? ' opacity-40 cursor-not-allowed' : '')}
-            placeholder="Morales"
+            placeholder=""
             disabled={tipo === 'empresa'}
             {...register('apellido')}
           />
@@ -110,24 +110,24 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Móvil <span className="text-status-red">*</span></label>
-          <input className={inputClass} placeholder="+506 8765-4321" {...register('movil')} />
+          <input className={inputClass} placeholder="" {...register('movil')} />
           {errors.movil && <p className={errorClass}>{errors.movil.message}</p>}
         </div>
         <div>
           <label className={labelClass}>Teléfono</label>
-          <input className={inputClass} placeholder="+506 2222-0000" {...register('telefono')} />
+          <input className={inputClass} placeholder="" {...register('telefono')} />
         </div>
       </div>
 
       {/* Email */}
       <div>
         <label className={labelClass}>Correo electrónico <span className="text-status-red">*</span></label>
-        <input type="email" className={inputClass} placeholder="tucorreo@gmail.com" {...register('email')} />
+        <input type="email" className={inputClass} placeholder="" {...register('email')} />
         {errors.email && <p className={errorClass}>{errors.email.message}</p>}
       </div>
       <div>
         <label className={labelClass}>Repita correo <span className="text-status-red">*</span></label>
-        <input type="email" className={inputClass} placeholder="tucorreo@gmail.com" {...register('emailConfirm')} />
+        <input type="email" className={inputClass} placeholder="" {...register('emailConfirm')} />
         {errors.emailConfirm && <p className={errorClass}>{errors.emailConfirm.message}</p>}
       </div>
 
