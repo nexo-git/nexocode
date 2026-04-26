@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
+import { fetchAuthSession } from 'aws-amplify/auth'
+
+async function authHeaders(): Promise<HeadersInit> {
+  const session = await fetchAuthSession()
+  const token = session.tokens?.idToken?.toString() ?? ''
+  return { Authorization: token, 'Content-Type': 'application/json' }
+}
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -47,7 +54,8 @@ export default function AdminUserDetailPage() {
 
   async function fetchUser() {
     try {
-      const res = await fetch(`${apiUrl}/admin/users/${id}`)
+      const headers = await authHeaders()
+      const res = await fetch(`${apiUrl}/admin/users/${id}`, { headers })
       const data = await res.json()
       const attrs: Record<string, string> = {}
       data.UserAttributes?.forEach((a: { Name: string; Value: string }) => {
@@ -71,9 +79,10 @@ export default function AdminUserDetailPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true)
     try {
+      const headers = await authHeaders()
       await fetch(`${apiUrl}/admin/users/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data),
       })
       router.push('/admin')
@@ -85,8 +94,9 @@ export default function AdminUserDetailPage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`¿Eliminár la cuenta de ${email}? Esta acción no se puede deshacer.`)) return
-    await fetch(`${apiUrl}/admin/users/${id}`, { method: 'DELETE' })
+    if (!confirm(`¿Eliminar la cuenta de ${email}? Esta acción no se puede deshacer.`)) return
+    const headers = await authHeaders()
+    await fetch(`${apiUrl}/admin/users/${id}`, { method: 'DELETE', headers })
     router.push('/admin')
   }
 
