@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cdk deploy *)",
+      "Bash(xargs head *)",
+      "Read(//c/Users/a/AppData/Local/Temp/claude/c--Users-a-Desktop-NEXO-nexocode/0b0534d1-d59e-459b-abdf-059c1eadd462/tasks/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\a\\Desktop\\NEXO\\nexocode\\src\\app\\admin"
+    ]
+  }
+}
