@@ -23,7 +23,6 @@ export async function registerUser(data: RegisterData): Promise<{ needsConfirmat
           email: data.email.toLowerCase().trim(),
           given_name: data.nombre.trim(),
           family_name: data.apellido?.trim() ?? '',
-          phone_number: data.movil.trim() ? undefined : undefined,
           'custom:tipo': data.tipo,
           'custom:movil': data.movil.trim(),
           'custom:telefono': data.telefono?.trim() ?? '',
