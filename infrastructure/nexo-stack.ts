@@ -4,6 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import * as iam from 'aws-cdk-lib/aws-iam'
+import * as budgets from 'aws-cdk-lib/aws-budgets'
 import { Construct } from 'constructs'
 
 export class NexoStack extends cdk.Stack {
@@ -301,6 +302,36 @@ export class NexoStack extends cdk.Stack {
     const adminOrderResource = adminOrdersResource.addResource('{orderId}')
     adminOrdersResource.addMethod('GET', ordersIntegration, authOptions)
     adminOrderResource.addMethod('PUT', ordersIntegration, authOptions)
+
+    // ─── Budget Alert ────────────────────────────────────────────────
+    new budgets.CfnBudget(this, 'NexoBudget', {
+      budget: {
+        budgetName: 'nexo-monthly-limit',
+        budgetType: 'COST',
+        timeUnit: 'MONTHLY',
+        budgetLimit: { amount: 20, unit: 'USD' },
+      },
+      notificationsWithSubscribers: [
+        {
+          notification: {
+            notificationType: 'ACTUAL',
+            comparisonOperator: 'GREATER_THAN',
+            threshold: 80,
+            thresholdType: 'PERCENTAGE',
+          },
+          subscribers: [{ subscriptionType: 'EMAIL', address: 'nexxo.courier+prod@gmail.com' }],
+        },
+        {
+          notification: {
+            notificationType: 'ACTUAL',
+            comparisonOperator: 'GREATER_THAN',
+            threshold: 100,
+            thresholdType: 'PERCENTAGE',
+          },
+          subscribers: [{ subscriptionType: 'EMAIL', address: 'nexxo.courier+prod@gmail.com' }],
+        },
+      ],
+    })
 
     // ─── Outputs ─────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId })
