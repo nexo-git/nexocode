@@ -1,0 +1,21 @@
+{
+  "version": "53.0.0",
+  "files": {
+    "e68c455d6108fa926cf38331f9f031619e9641f8b1203c0577346a3085b20214": {
+      "displayName": "NexoStack Template",
+      "source": {
+        "path": "NexoStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "769953010359-us-east-1-dd00a0a9": {
+          "bucketName": "cdk-hnb659fds-assets-769953010359-us-east-1",
+          "objectKey": "e68c455d6108fa926cf38331f9f031619e9641f8b1203c0577346a3085b20214.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::769953010359:role/cdk-hnb659fds-file-publishing-role-769953010359-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

@@ -1,0 +1,607 @@
+{
+  "/NexoStack": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/AdminGroup": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AdminGroup"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:53:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/UserGroup": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserGroup"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:59:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoUsersTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "NexoUsersTable70C8B778"
+      }
+    }
+  ],
+  "/NexoStack/UserPoolId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserPoolId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:172:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/UserPoolClientId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserPoolClientId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:173:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/ApiUrl": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ApiUrl"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:174:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/UsersTableName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UsersTableName"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:175:5)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, ts-node...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/NexoStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, ts-node...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/NexoStack/NexoUserPool/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoUserPoolA7DC0014"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new UserPool2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:14:22)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoUserPoolClient/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoUserPoolClient0969E606"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new UserPoolClient2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:42:28)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoUsersTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoUsersTable70C8B778"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:66:24)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminLambda/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminLambda07AB13F3"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:79:25)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApi007E295B"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Account": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiAccount25C2FF75"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Endpoint": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiEndpoint50A6DD8F"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, ts-node...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminLambda/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminLambdaServiceRoleFA62149D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:79:25)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/CloudWatchRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiCloudWatchRole901B1E1F"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Deployment/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiDeployment85F3024D8b077dfc3b1c284e7b5abe543fb74b88"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/DeploymentStage.prod/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiDeploymentStageprod848F02F7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminLambda/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminLambdaServiceRoleDefaultPolicyB955B790"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addToRolePolicy in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:140:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiOPTIONS0EFD5D2D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:153:17)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminAEC07B23"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:161:36)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminOPTIONSB287EF0D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:161:36)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusers808FB8FD"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:162:41)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersOPTIONS90F9ECCB"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:162:41)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdF964974C"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:163:40)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/GET/ApiPermission.NexoStackNexoAdminApi7D929C70.GET..admin.users": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersGETApiPermissionNexoStackNexoAdminApi7D929C70GETadminusers0D8D3D3B"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:166:19)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/GET/ApiPermission.Test.NexoStackNexoAdminApi7D929C70.GET..admin.users": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersGETApiPermissionTestNexoStackNexoAdminApi7D929C70GETadminusers2BCE700E"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:166:19)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersGETC65EE4A2"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:166:19)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdOPTIONS0748D4C5"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:163:40)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/GET/ApiPermission.NexoStackNexoAdminApi7D929C70.GET..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdGETApiPermissionNexoStackNexoAdminApi7D929C70GETadminusersuserIdC92B6009"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:167:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/GET/ApiPermission.Test.NexoStackNexoAdminApi7D929C70.GET..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdGETApiPermissionTestNexoStackNexoAdminApi7D929C70GETadminusersuserId4C2B92ED"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:167:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdGET5E90821B"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:167:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/PUT/ApiPermission.NexoStackNexoAdminApi7D929C70.PUT..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdPUTApiPermissionNexoStackNexoAdminApi7D929C70PUTadminusersuserId610DD7A7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:168:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/PUT/ApiPermission.Test.NexoStackNexoAdminApi7D929C70.PUT..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdPUTApiPermissionTestNexoStackNexoAdminApi7D929C70PUTadminusersuserId0A207B9C"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:168:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/PUT/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdPUT5E548DC8"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:168:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/DELETE/ApiPermission.NexoStackNexoAdminApi7D929C70.DELETE..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdDELETEApiPermissionNexoStackNexoAdminApi7D929C70DELETEadminusersuserIdE41BF9C1"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:169:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/DELETE/ApiPermission.Test.NexoStackNexoAdminApi7D929C70.DELETE..admin.users.{userId}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdDELETEApiPermissionTestNexoStackNexoAdminApi7D929C70DELETEadminusersuserId9DE4C948"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:169:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/NexoStack/NexoAdminApi/Default/admin/users/{userId}/DELETE/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "NexoAdminApiadminusersuserIdDELETEE858DE32"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new NexoStack (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\nexo-stack.ts:169:18)",
+        "<anonymous> (C:\\Users\\a\\Desktop\\NEXO\\nexocode\\infrastructure\\bin.ts:8:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ]
+}
