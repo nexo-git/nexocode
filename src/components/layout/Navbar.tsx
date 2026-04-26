@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User } from 'lucide-react'
+import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User, Settings } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -14,9 +14,21 @@ import type { NexoUser } from '@/types/casillero'
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [user, setUser] = useState<NexoUser | null>(null)
   const pathname = usePathname()
   const router = useRouter()
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -82,23 +94,43 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {user ? (
             <>
-              <Link href="/casillero">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                >
                   <div className="w-6 h-6 rounded-full bg-cyan/20 flex items-center justify-center">
                     <User size={12} className="text-cyan" />
                   </div>
                   <span className="text-sm text-ghost font-medium">{user.nombre}</span>
-                </div>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<LogOut size={14} />}
-                onClick={handleLogout}
-                className="text-slate hover:text-ghost"
-              >
-                Cerrar sesión
-              </Button>
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-midnight border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
+                    <Link
+                      href="/casillero"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate hover:text-ghost hover:bg-white/5 transition-colors"
+                    >
+                      <Package2 size={15} /> Mi casillero
+                    </Link>
+                    <Link
+                      href="/cuenta"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate hover:text-ghost hover:bg-white/5 transition-colors"
+                    >
+                      <Settings size={15} /> Cuenta
+                    </Link>
+                    <div className="border-t border-white/5" />
+                    <button
+                      onClick={() => { setUserMenuOpen(false); handleLogout() }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-slate hover:text-status-red hover:bg-status-red/5 transition-colors"
+                    >
+                      <LogOut size={15} /> Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -170,6 +202,11 @@ export default function Navbar() {
                 <Link href="/casillero" className="mt-2">
                   <Button variant="secondary" size="md" className="w-full" icon={<Package2 size={14} />}>
                     Mi casillero
+                  </Button>
+                </Link>
+                <Link href="/cuenta" className="mt-1">
+                  <Button variant="ghost" size="md" className="w-full text-slate" icon={<Settings size={14} />}>
+                    Cuenta
                   </Button>
                 </Link>
                 <Button
