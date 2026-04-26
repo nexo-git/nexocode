@@ -10,6 +10,8 @@ export interface NexoOrder {
   description: string
   startDate: string
   status: OrderStatus
+  peso?: number
+  totalPagado?: number
   updatedAt: string
 }
 

@@ -122,9 +122,17 @@ export default function PedidosPage() {
                     {order.description && (
                       <p className="text-slate text-xs truncate">{order.description}</p>
                     )}
-                    <p className="text-slate text-xs mt-1">
-                      Agregado el {new Date(order.startDate).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <p className="text-slate text-xs">
+                        Agregado el {new Date(order.startDate).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      {order.peso != null && (
+                        <span className="text-xs text-ghost/60">{order.peso} lb</span>
+                      )}
+                      {order.totalPagado != null && (
+                        <span className="text-xs font-medium text-cyan">${order.totalPagado.toFixed(2)}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )

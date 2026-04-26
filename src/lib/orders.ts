@@ -1,6 +1,12 @@
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
 
+export interface OrderUpdate {
+  status?: OrderStatus
+  peso?: number
+  totalPagado?: number
+}
+
 const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -43,12 +49,16 @@ export async function getAllOrders(): Promise<NexoOrder[]> {
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<boolean> {
+  return updateOrder(orderId, { status })
+}
+
+export async function updateOrder(orderId: string, data: OrderUpdate): Promise<boolean> {
   try {
     const headers = await authHeaders()
     const res = await fetch(`${API}/admin/orders/${orderId}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(data),
     })
     return res.ok
   } catch {

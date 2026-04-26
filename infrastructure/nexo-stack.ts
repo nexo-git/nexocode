@@ -224,17 +224,22 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 200, headers, body: JSON.stringify(items) }
             }
 
-            // PUT /admin/orders/{orderId} — actualizar estado (solo admin)
+            // PUT /admin/orders/{orderId} — actualizar pedido (solo admin)
             if (method === 'PUT' && orderId) {
               if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
               const body = JSON.parse(event.body || '{}')
-              if (!body.status) return { statusCode: 400, headers, body: JSON.stringify({ error: 'status es requerido' }) }
+              const exprParts = ['updatedAt = :u']
+              const exprNames = {}
+              const exprValues = { ':u': new Date().toISOString() }
+              if (body.status) { exprParts.push('#s = :s'); exprNames['#s'] = 'status'; exprValues[':s'] = body.status }
+              if (body.peso !== undefined) { exprParts.push('peso = :p'); exprValues[':p'] = body.peso }
+              if (body.totalPagado !== undefined) { exprParts.push('totalPagado = :t'); exprValues[':t'] = body.totalPagado }
               await dynamo.send(new UpdateItemCommand({
                 TableName: TABLE_NAME,
                 Key: marshall({ orderId }),
-                UpdateExpression: 'SET #s = :s, updatedAt = :u',
-                ExpressionAttributeNames: { '#s': 'status' },
-                ExpressionAttributeValues: marshall({ ':s': body.status, ':u': new Date().toISOString() }),
+                UpdateExpression: 'SET ' + exprParts.join(', '),
+                ...(Object.keys(exprNames).length ? { ExpressionAttributeNames: exprNames } : {}),
+                ExpressionAttributeValues: marshall(exprValues),
               }))
               return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }

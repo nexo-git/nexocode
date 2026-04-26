@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
-import { getAllOrders, updateOrderStatus } from '@/lib/orders'
+import { getAllOrders, updateOrderStatus, updateOrder } from '@/lib/orders'
 import { Search, UserCog, Trash2, Edit, Package } from 'lucide-react'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
@@ -116,6 +116,17 @@ export default function AdminPage() {
       setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status } : o))
     }
     setUpdatingId(null)
+  }
+
+  async function handleFieldBlur(orderId: string, field: 'peso' | 'totalPagado', raw: string) {
+    const value = parseFloat(raw)
+    if (isNaN(value) || value < 0) return
+    const current = orders.find((o) => o.orderId === orderId)
+    if (current?.[field] === value) return
+    const ok = await updateOrder(orderId, { [field]: value })
+    if (ok) {
+      setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, [field]: value } : o))
+    }
   }
 
   return (
@@ -252,6 +263,8 @@ export default function AdminPage() {
                       <th className="text-left px-5 py-4 hidden md:table-cell">Tracking</th>
                       <th className="text-left px-5 py-4 hidden lg:table-cell">Descripción</th>
                       <th className="text-left px-5 py-4 hidden lg:table-cell">Fecha</th>
+                      <th className="text-left px-5 py-4 hidden xl:table-cell">Peso (lb)</th>
+                      <th className="text-left px-5 py-4 hidden xl:table-cell">Total ($)</th>
                       <th className="text-left px-5 py-4">Estado</th>
                     </tr>
                   </thead>
@@ -270,6 +283,28 @@ export default function AdminPage() {
                         </td>
                         <td className="px-5 py-4 hidden lg:table-cell text-slate">
                           {new Date(order.startDate).toLocaleDateString('es-CR')}
+                        </td>
+                        <td className="px-5 py-4 hidden xl:table-cell">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={order.peso ?? ''}
+                            placeholder="—"
+                            onBlur={(e) => handleFieldBlur(order.orderId, 'peso', e.target.value)}
+                            className="w-20 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate"
+                          />
+                        </td>
+                        <td className="px-5 py-4 hidden xl:table-cell">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={order.totalPagado ?? ''}
+                            placeholder="—"
+                            onBlur={(e) => handleFieldBlur(order.orderId, 'totalPagado', e.target.value)}
+                            className="w-24 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate"
+                          />
                         </td>
                         <td className="px-5 py-4">
                           <select
