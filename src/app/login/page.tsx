@@ -11,11 +11,13 @@ export default function LoginPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (getCurrentUser()) {
-      router.replace('/casillero')
-    } else {
-      setReady(true)
-    }
+    getCurrentUser().then((user) => {
+      if (user) {
+        router.replace('/casillero')
+      } else {
+        setReady(true)
+      }
+    })
   }, [router])
 
   const handleSuccess = (_user: NexoUser) => {

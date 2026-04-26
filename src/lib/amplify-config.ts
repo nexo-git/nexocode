@@ -13,5 +13,5 @@ const config = {
 }
 
 export function configureAmplify() {
-  Amplify.configure(config, { ssr: true })
+  Amplify.configure(config)
 }
