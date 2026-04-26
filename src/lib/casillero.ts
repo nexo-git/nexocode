@@ -2,6 +2,8 @@ import {
   signUp,
   signIn,
   signOut,
+  confirmSignUp,
+  resendSignUpCode,
   getCurrentUser as getAmplifyUser,
   fetchUserAttributes,
   updateUserAttributes,
@@ -11,7 +13,7 @@ import {
 import type { NexoUser, RegisterData } from '@/types/casillero'
 import { NEXO_WAREHOUSE_ADDRESS, NEXO_WAREHOUSE_PHONE } from '@/lib/constants'
 
-export async function registerUser(data: RegisterData): Promise<{ user: NexoUser } | { error: string }> {
+export async function registerUser(data: RegisterData): Promise<{ needsConfirmation: true; email: string } | { error: string }> {
   try {
     await signUp({
       username: data.email.toLowerCase().trim(),
@@ -28,18 +30,41 @@ export async function registerUser(data: RegisterData): Promise<{ user: NexoUser
         },
       },
     } as SignUpInput)
-
-    // Auto login after signup
-    await signIn({ username: data.email.toLowerCase().trim(), password: data.password })
-    const user = await getCurrentUser()
-    if (!user) return { error: 'Error al iniciar sesión después del registro.' }
-    return { user }
+    return { needsConfirmation: true, email: data.email.toLowerCase().trim() }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al registrar la cuenta.'
     if (message.includes('UsernameExistsException') || message.includes('already exists')) {
       return { error: 'Ya existe una cuenta con ese correo electrónico.' }
     }
     return { error: message }
+  }
+}
+
+export async function confirmAndLogin(email: string, password: string, code: string): Promise<{ user: NexoUser } | { error: string }> {
+  try {
+    await confirmSignUp({ username: email, confirmationCode: code })
+    await signIn({ username: email, password })
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Error al iniciar sesión.' }
+    return { user }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al confirmar el código.'
+    if (message.includes('CodeMismatchException') || message.includes('Invalid verification code')) {
+      return { error: 'Código incorrecto. Revisá tu correo e intentá de nuevo.' }
+    }
+    if (message.includes('ExpiredCodeException')) {
+      return { error: 'El código expiró. Solicitá uno nuevo.' }
+    }
+    return { error: message }
+  }
+}
+
+export async function resendCode(email: string): Promise<{ success: true } | { error: string }> {
+  try {
+    await resendSignUpCode({ username: email })
+    return { success: true }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : 'Error al reenviar el código.' }
   }
 }
 

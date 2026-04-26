@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, Mail } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { registerUser } from '@/lib/casillero'
+import { registerUser, confirmAndLogin, resendCode } from '@/lib/casillero'
 import type { NexoUser } from '@/types/casillero'
 import Link from 'next/link'
 
@@ -44,6 +44,12 @@ const errorClass = 'text-xs text-status-red mt-1'
 
 export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
   const [serverError, setServerError] = useState('')
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [pendingPassword, setPendingPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [confirmingCode, setConfirmingCode] = useState(false)
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { tipo: 'persona' },
@@ -61,8 +67,84 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
     if ('error' in result) {
       setServerError(result.error)
     } else {
+      setPendingEmail(result.email)
+      setPendingPassword(data.password)
+    }
+  }
+
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!pendingEmail || !code.trim()) return
+    setConfirmingCode(true)
+    setServerError('')
+    const result = await confirmAndLogin(pendingEmail, pendingPassword, code.trim())
+    setConfirmingCode(false)
+    if ('error' in result) {
+      setServerError(result.error)
+    } else {
       onSuccess(result.user)
     }
+  }
+
+  const handleResend = async () => {
+    if (!pendingEmail) return
+    setResendStatus('idle')
+    const result = await resendCode(pendingEmail)
+    setResendStatus('error' in result ? 'error' : 'sent')
+  }
+
+  if (pendingEmail) {
+    return (
+      <form onSubmit={handleConfirm} className="space-y-5">
+        <div className="flex flex-col items-center text-center mb-2">
+          <div className="w-14 h-14 rounded-2xl bg-cyan/10 flex items-center justify-center mb-4">
+            <Mail size={26} className="text-cyan" />
+          </div>
+          <h2 className="text-ghost font-semibold text-lg mb-1">Verificá tu correo</h2>
+          <p className="text-slate text-sm">
+            Enviamos un código a <span className="text-ghost font-medium">{pendingEmail}</span>.<br />
+            Ingresalo para activar tu cuenta.
+          </p>
+        </div>
+
+        <div>
+          <label className={labelClass}>Código de verificación <span className="text-status-red">*</span></label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            placeholder="123456"
+            className="w-full bg-midnight border border-white/10 rounded-xl px-4 py-4 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 focus:ring-1 focus:ring-cyan/30 transition-colors text-2xl font-mono tracking-[0.4em] text-center"
+          />
+        </div>
+
+        {serverError && (
+          <p className="text-sm text-status-red bg-status-red/10 border border-status-red/20 rounded-xl px-4 py-3">
+            {serverError}
+          </p>
+        )}
+
+        <Button type="submit" size="lg" className="w-full" loading={confirmingCode}>
+          Confirmar cuenta
+        </Button>
+
+        <div className="text-center">
+          {resendStatus === 'sent' ? (
+            <p className="text-status-green text-sm">Código reenviado. Revisá tu correo.</p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResend}
+              className="text-slate text-sm hover:text-cyan transition-colors"
+            >
+              ¿No recibiste el código? <span className="text-cyan">Reenviar</span>
+            </button>
+          )}
+        </div>
+      </form>
+    )
   }
 
   return (
