@@ -1,0 +1,57 @@
+import { fetchAuthSession } from 'aws-amplify/auth'
+import type { NexoOrder, OrderStatus } from '@/types/casillero'
+
+const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''
+
+async function authHeaders(): Promise<HeadersInit> {
+  const session = await fetchAuthSession()
+  const token = session.tokens?.idToken?.toString() ?? ''
+  return { 'Authorization': token, 'Content-Type': 'application/json' }
+}
+
+export async function getMyOrders(): Promise<NexoOrder[]> {
+  const headers = await authHeaders()
+  const res = await fetch(`${API}/orders`, { headers })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function addOrder(data: { trackingNumber: string; description: string }): Promise<{ order: NexoOrder } | { error: string }> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/orders`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      return { error: err.error || 'Error al agregar el pedido.' }
+    }
+    const order = await res.json()
+    return { order }
+  } catch {
+    return { error: 'Error de conexión.' }
+  }
+}
+
+export async function getAllOrders(): Promise<NexoOrder[]> {
+  const headers = await authHeaders()
+  const res = await fetch(`${API}/admin/orders`, { headers })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/admin/orders/${orderId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ status }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
