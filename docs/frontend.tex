@@ -1,0 +1,726 @@
+\documentclass[12pt,a4paper]{article}
+
+% ---------- Paquetes ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{mdframed}
+\usepackage{lmodern}
+\usepackage[scaled=0.95]{helvet}
+\usepackage{courier}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+
+% ---------- Colores de marca nexo ----------
+\definecolor{nexoBlack}{HTML}{0A0E1A}
+\definecolor{nexoCyan}{HTML}{00D4FF}
+\definecolor{nexoMidnight}{HTML}{1A2744}
+\definecolor{nexoGhost}{HTML}{F4F7FC}
+\definecolor{nexoSlate}{HTML}{8A95A8}
+\definecolor{nexoGreen}{HTML}{00E5A0}
+\definecolor{nexoAmber}{HTML}{FFB800}
+\definecolor{nexoRed}{HTML}{FF4D6A}
+\definecolor{codeBg}{HTML}{F4F7FC}
+
+% ---------- Listings ----------
+\lstset{
+  backgroundcolor=\color{codeBg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{nexoCyan!80!black}\bfseries,
+  stringstyle=\color{nexoAmber!80!black},
+  commentstyle=\color{nexoSlate}\itshape,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  rulecolor=\color{nexoSlate!30},
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{nexoSlate},
+  numbersep=8pt,
+  tabsize=4,
+  xleftmargin=1.5em,
+}
+
+% ---------- Encabezado / pie de página ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[L]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[nexoBlack] (current page.north west)
+      rectangle ([yshift=-1.1cm]current page.north east);
+    \node[anchor=west, text=white, font=\bfseries\small]
+      at ([xshift=2.5cm, yshift=-0.55cm]current page.north west)
+      {\textcolor{nexoCyan}{nexo} \textcolor{nexoSlate}{---}\ Infraestructura Frontend};
+    \node[anchor=east, text=nexoSlate, font=\small]
+      at ([xshift=-2.5cm, yshift=-0.55cm]current page.north east)
+      {Documento Interno · v2.0};
+  \end{tikzpicture}%
+}
+\fancyfoot[C]{\small\textcolor{nexoSlate}{\thepage}}
+
+% ---------- Hyperref ----------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=nexoCyan!60!black,
+  urlcolor=nexoCyan!60!black,
+  pdftitle={Infraestructura Frontend — nexo courier},
+  pdfauthor={nexo Engineering},
+}
+
+% ---------- TikZ ----------
+\tikzset{
+  block/.style={
+    rectangle, rounded corners=4pt, minimum width=2.8cm, minimum height=1cm,
+    text centered, draw=nexoMidnight, fill=nexoMidnight!15, font=\small
+  },
+  aws/.style={
+    rectangle, rounded corners=4pt, minimum width=2.8cm, minimum height=1cm,
+    text centered, draw=nexoCyan!70!black, fill=nexoCyan!10, font=\small\bfseries
+  },
+  external/.style={
+    ellipse, minimum width=2.5cm, minimum height=0.9cm,
+    text centered, draw=nexoSlate, fill=nexoSlate!10, font=\small
+  },
+  arrow/.style={-{Stealth[length=6pt]}, thick, color=nexoMidnight},
+  cyan_arrow/.style={-{Stealth[length=6pt]}, thick, color=nexoCyan!70!black},
+  dashed_arrow/.style={-{Stealth[length=6pt]}, dashed, thick, color=nexoSlate},
+}
+
+% ---------- Caja nexo ----------
+\newmdenv[
+  backgroundcolor=nexoBlack!5,
+  linecolor=nexoCyan,
+  linewidth=2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=12pt, innerrightmargin=8pt,
+  innertopmargin=6pt, innerbottommargin=6pt,
+]{nexobox}
+
+% ==========================================================
+\begin{document}
+
+% ---------- PORTADA ----------
+\begin{titlepage}
+  \pagecolor{nexoBlack}
+  \color{white}
+  \centering
+  \vspace*{3cm}
+
+  {\large\textcolor{nexoSlate}\itshape Tu puente entre dos mundos.\par}
+  \vspace{1.2cm}
+
+  {\fontsize{52}{56}\selectfont\bfseries
+    \textcolor{white}{ne}\textcolor{nexoCyan}{x}\textcolor{white}{o}\par}
+  \vspace{0.4cm}
+  {\LARGE\bfseries Frontend --- Arquitectura Técnica\par}
+
+  \vspace{1.8cm}
+  \textcolor{nexoCyan}{\rule{0.55\textwidth}{1.5pt}}%
+  \textcolor{nexoCyan}{\large\ $\bullet$}\par
+
+  \vspace{1.5cm}
+  {\large
+    \textcolor{nexoSlate}{Empresa}\quad\textcolor{white}{nexo courier (Costa Rica)} \\[0.5em]
+    \textcolor{nexoSlate}{Sistema}\quad\textcolor{white}{Sitio web y panel de administración} \\[0.5em]
+    \textcolor{nexoSlate}{Framework}\quad\textcolor{white}{Next.js 14 (App Router)} \\[0.5em]
+    \textcolor{nexoSlate}{Hosting}\quad\textcolor{white}{AWS Amplify Hosting} \\[0.5em]
+    \textcolor{nexoSlate}{Dominio}\quad\textcolor{white}{nexocourier.com} \\[0.5em]
+    \textcolor{nexoSlate}{Versión}\quad\textcolor{white}{2.0} \\[0.5em]
+    \textcolor{nexoSlate}{Fecha}\quad\textcolor{white}{Abril 2026}
+  }
+
+  \vfill
+  {\small\textcolor{nexoSlate}{Confidencial --- Uso Interno}}
+\end{titlepage}
+
+\pagecolor{white}
+\color{black}
+
+\tableofcontents
+\newpage
+
+% ==========================================================
+\section{Resumen Ejecutivo}
+
+\begin{nexobox}
+El frontend de \textbf{nexo courier} es una aplicación web moderna construida con
+\textbf{Next.js 14}. Se despliega automáticamente en \textbf{AWS Amplify Hosting}
+cada vez que se hace push a la rama \texttt{master} de GitHub. El sitio vive en
+\textbf{nexocourier.com} con HTTPS gestionado por AWS Certificate Manager.
+\end{nexobox}
+
+\vspace{0.5em}
+El sistema incluye un sitio público de marketing, un portal de casillero para clientes
+autenticados, un sistema de gestión de pedidos con seguimiento de estado, y un panel de
+administración protegido por grupo de Cognito. La autenticación se maneja directamente
+contra \textbf{AWS Cognito} usando el SDK de Amplify v6, con verificación obligatoria
+de correo electrónico al registrarse.
+
+\subsection{Stack tecnológico}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Componente} & \textbf{Tecnología} & \textbf{Versión} \\
+\midrule
+Framework & Next.js (App Router) & 14.2.35 \\
+Lenguaje & TypeScript & \textasciicircum{}5 \\
+Estilos & Tailwind CSS & \textasciicircum{}3.4.17 \\
+Auth SDK & AWS Amplify & \textasciicircum{}6.16.4 \\
+Formularios & React Hook Form + Zod & \textasciicircum{}7.54 / \textasciicircum{}3.23 \\
+Animaciones & Framer Motion & \textasciicircum{}11.11 \\
+Iconos & Lucide React & \textasciicircum{}0.468 \\
+Hosting & AWS Amplify Hosting & -- \\
+DNS & Cloudflare & -- \\
+\bottomrule
+\end{tabular}
+\caption{Stack tecnológico del frontend}
+\end{table}
+
+% ==========================================================
+\section{Pipeline CI/CD}
+
+\begin{lstlisting}[caption={Pipeline de despliegue automático}, numbers=none]
+  Developer        GitHub                  AWS Amplify        CloudFront
+  (local)          nexo-git/nexocode        Build              CDN
+  +---------+      +------------------+    +------------+    +----------+
+  |  code   | ---> |  master branch   | -> |  npm build | -> |  deploy  |
+  +---------+      +------------------+    +------------+    +----------+
+  git push          webhook trigger         ~3 minutos         nexocourier.com
+\end{lstlisting}
+
+\subsection*{Fases del build}
+
+\begin{description}
+  \item[\textbf{preBuild}] \texttt{npm ci --legacy-peer-deps} --- instala dependencias exactas del lock file.
+  \item[\textbf{build}] \texttt{npm run build} --- compila Next.js y genera artefactos en \texttt{.next/}.
+  \item[\textbf{deploy}] Amplify toma el directorio \texttt{.next/} y lo publica en CloudFront globalmente.
+\end{description}
+
+% ==========================================================
+\section{Estructura de Archivos}
+
+\begin{lstlisting}[language=bash, caption={Estructura del proyecto}]
+nexocode/
+├── src/
+│   ├── app/                       # App Router (Next.js 14)
+│   │   ├── layout.tsx             # Layout raiz + AmplifyProvider
+│   │   ├── page.tsx               # Landing page publica
+│   │   ├── casillero/page.tsx     # Casillero USA (registro/info)
+│   │   ├── login/page.tsx         # Inicio de sesion
+│   │   ├── cuenta/page.tsx        # Perfil del usuario autenticado
+│   │   ├── pedidos/page.tsx       # Historial de pedidos (protegida)
+│   │   ├── cotizar/page.tsx       # Calculadora de envios
+│   │   ├── asistente/page.tsx     # Asistente de compras IA
+│   │   ├── nosotros/page.tsx      # Pagina institucional
+│   │   ├── tracking/page.tsx      # Rastreo de paquetes
+│   │   └── admin/
+│   │       ├── page.tsx           # Panel admin: usuarios + pedidos
+│   │       └── [id]/page.tsx      # Editar/eliminar usuario
+│   ├── components/
+│   │   ├── AmplifyProvider.tsx    # Init del SDK de Amplify (nivel modulo)
+│   │   ├── ui/                    # Button, Card, Select, Badge, Input
+│   │   ├── casillero/             # CasilleroForm, LoginForm, AddressCard
+│   │   ├── layout/                # Navbar (con dropdown), Footer
+│   │   ├── cotizar/               # QuoteForm, QuoteResult
+│   │   ├── tracking/              # StatusBadge, TrackingCard, TrackingTimeline
+│   │   └── sections/              # Secciones de la landing
+│   ├── lib/
+│   │   ├── casillero.ts           # Auth: registro, login, verificacion, perfil
+│   │   ├── orders.ts              # Pedidos: crear, listar, actualizar
+│   │   ├── amplify-config.ts      # Configuracion Amplify SDK
+│   │   ├── constants.ts           # Constantes globales
+│   │   ├── pricing.ts             # Logica de cotizacion
+│   │   ├── tracking.ts            # Integracion de rastreo
+│   │   └── utils.ts               # Utilidades (cn, etc.)
+│   └── types/
+│       ├── casillero.ts           # NexoUser, NexoOrder, OrderStatus
+│       ├── quote.ts               # Tipos de cotizacion
+│       └── tracking.ts            # Tipos de rastreo
+├── public/                        # Assets estaticos
+├── docs/                          # Documentacion tecnica (este archivo)
+├── amplify.yml                    # Config build Amplify
+├── next.config.mjs
+├── tailwind.config.ts
+├── tsconfig.json
+└── package.json
+\end{lstlisting}
+
+% ==========================================================
+\section{Páginas y Rutas}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Ruta} & \textbf{Acceso} & \textbf{Descripción} \\
+\midrule
+\texttt{/} & Público & Landing page con secciones de marketing \\
+\texttt{/cotizar} & Público & Calculadora de costos de envío \\
+\texttt{/asistente} & Público & Asistente de compras con IA \\
+\texttt{/nosotros} & Público & Página institucional \\
+\texttt{/tracking} & Público & Rastreo de paquetes por tracking number \\
+\texttt{/casillero} & Público / Auth & Dirección USA si hay sesión activa \\
+\texttt{/login} & Público & Formulario de inicio de sesión \\
+\texttt{/pedidos} & Protegida & Historial y gestión de pedidos del usuario \\
+\texttt{/cuenta} & Protegida & Editar perfil y eliminar cuenta \\
+\texttt{/admin} & Protegida (admin) & Dashboard: tabs Usuarios y Pedidos \\
+\texttt{/admin/[id]} & Protegida (admin) & Editar o eliminar un usuario \\
+\bottomrule
+\end{tabular}
+\caption{Rutas del sitio web}
+\end{table}
+
+\begin{nexobox}
+\textbf{Protección de rutas:} No existe middleware de Next.js. Cada página protegida
+verifica la sesión en su propio \texttt{useEffect} usando \texttt{getCurrentUser()}.
+Las páginas de admin además verifican que el usuario pertenezca al grupo \texttt{admin}
+de Cognito leyendo el claim \texttt{cognito:groups} del JWT.
+\end{nexobox}
+
+% ==========================================================
+\section{Autenticación con AWS Amplify SDK}
+
+\subsection{Flujo de registro con verificación de correo}
+
+\begin{lstlisting}[caption={Flujo de registro con verificación de correo (double opt-in)}, numbers=none]
+  1.  Usuario completa el formulario de registro
+       |
+  2.  registerUser() llama a signUp() de Amplify
+       |
+  3.  Cognito crea la cuenta y envia codigo de 6 digitos al correo
+       |
+  4.  registerUser() retorna { needsConfirmation: true, email }
+       |
+  5.  CasilleroForm muestra pantalla de ingreso del codigo
+       |
+  6.  Usuario ingresa el codigo de verificacion
+       |
+  7.  confirmAndLogin(email, password, code)
+        -> confirmSignUp()  [valida el codigo en Cognito]
+        -> signIn()         [inicia sesion automaticamente]
+       |
+  8.  Frontend redirige a /casillero
+\end{lstlisting}
+
+\subsection{Flujo de login}
+
+\begin{lstlisting}[caption={Flujo de inicio de sesión}, numbers=none]
+  1.  Usuario ingresa email y contrasena
+       |
+  2.  loginUser() llama a signIn() de Amplify
+       |
+  3.  Cognito valida credenciales y retorna tokens JWT
+       |
+  4.  SDK almacena tokens en localStorage del navegador
+       |
+  5.  getCurrentUser() -> fetchUserAttributes() -> NexoUser
+       |
+  6.  Frontend redirige a /casillero
+\end{lstlisting}
+
+\begin{nexobox}
+\textbf{Amplify v6 usa \texttt{localStorage}, no cookies.} Por eso no existe middleware
+de Next.js en este proyecto: el middleware corre en Edge Runtime y no tiene acceso a
+\texttt{localStorage}. La protección de rutas se hace client-side en cada página.
+\end{nexobox}
+
+\subsection{Funciones de auth --- src/lib/casillero.ts}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Función} & \textbf{Descripción} \\
+\midrule
+\texttt{registerUser(data)} & Crea cuenta en Cognito. Retorna \texttt{\{needsConfirmation, email\}} \\
+\texttt{confirmAndLogin(email, password, code)} & Confirma código y hace login automático \\
+\texttt{resendCode(email)} & Reenvía el código de verificación al correo \\
+\texttt{loginUser(email, password)} & Inicia sesión y retorna \texttt{NexoUser} \\
+\texttt{getCurrentUser()} & Retorna el usuario autenticado o \texttt{null} \\
+\texttt{updateCurrentUser(data)} & Actualiza nombre, apellido, móvil, teléfono \\
+\texttt{deleteCurrentUser()} & Elimina la cuenta de Cognito \\
+\texttt{logoutUser()} & Cierra la sesión activa \\
+\texttt{generateAddress(nombre, apellido)} & Genera dirección de casillero USA \\
+\bottomrule
+\end{tabular}
+\caption{API de autenticación --- src/lib/casillero.ts}
+\end{table}
+
+\subsection{Tipos principales --- src/types/casillero.ts}
+
+\begin{lstlisting}[language=bash, caption={Tipos del dominio principal}]
+// Usuario autenticado
+interface NexoUser {
+  id:        string            // sub de Cognito
+  tipo:      "persona" | "empresa"
+  nombre:    string
+  apellido:  string
+  email:     string
+  movil:     string
+  telefono:  string
+  createdAt: string
+}
+
+// Pedido de envio
+type OrderStatus = "en_ruta" | "atascado" | "entregado"
+
+interface NexoOrder {
+  orderId:       string        // UUID
+  userId:        string        // sub de Cognito del dueno
+  userName:      string
+  userEmail:     string
+  trackingNumber: string
+  description:   string
+  startDate:     string        // ISO 8601
+  status:        OrderStatus
+  peso?:         number        // libras, lo carga el admin
+  totalPagado?:  number        // USD, lo carga el admin
+  updatedAt:     string
+}
+\end{lstlisting}
+
+% ==========================================================
+\section{Sistema de Pedidos}
+
+\subsection{Descripción general}
+
+Los clientes pueden registrar sus pedidos con número de tracking y descripción.
+El admin ve todos los pedidos, actualiza el estado y carga el peso y total cobrado.
+
+\begin{lstlisting}[caption={Flujo del sistema de pedidos}, numbers=none]
+  Cliente (/pedidos)
+    GET /orders   -->  API Gateway  -->  Lambda nexo-orders-api  -->  DynamoDB nexo-orders
+    POST /orders  -->  API Gateway  -->  Lambda nexo-orders-api  -->  DynamoDB nexo-orders
+
+  Admin (/admin tab Pedidos)
+    GET /admin/orders          -->  API Gateway  -->  Lambda  -->  DynamoDB (Scan)
+    PUT /admin/orders/{id}     -->  API Gateway  -->  Lambda  -->  DynamoDB (Update)
+
+  Todos los requests llevan: Authorization: <JWT token de Cognito>
+  API Gateway valida el token con el Cognito Authorizer antes de invocar el Lambda.
+\end{lstlisting}
+
+\subsection{Funciones --- src/lib/orders.ts}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Función} & \textbf{Descripción} \\
+\midrule
+\texttt{getMyOrders()} & GET \texttt{/orders} --- pedidos del usuario autenticado \\
+\texttt{addOrder(data)} & POST \texttt{/orders} --- crea un nuevo pedido \\
+\texttt{getAllOrders()} & GET \texttt{/admin/orders} --- todos los pedidos (solo admin) \\
+\texttt{updateOrderStatus(orderId, status)} & Atajo para actualizar solo el estado \\
+\texttt{updateOrder(orderId, data)} & PUT \texttt{/admin/orders/\{id\}} --- actualiza status, peso o totalPagado \\
+\bottomrule
+\end{tabular}
+\caption{API de pedidos --- src/lib/orders.ts}
+\end{table}
+
+\begin{nexobox}
+Todas las llamadas a la API incluyen el token JWT en el header
+\texttt{Authorization}, obtenido con \texttt{fetchAuthSession()} de Amplify.
+El API Gateway valida el token con el Cognito Authorizer antes de invocar el Lambda.
+\end{nexobox}
+
+\subsection{Página del cliente --- /pedidos}
+
+\begin{itemize}
+  \item Lista de pedidos con badge de estado (En ruta / Atascado / Entregado)
+  \item Muestra peso en libras y total pagado en USD si el admin los cargó
+  \item Botón ``Agregar pedido'' abre formulario inline: tracking number (requerido) y descripción (opcional)
+  \item Estado vacío con CTAs a \texttt{/cotizar} y WhatsApp
+\end{itemize}
+
+\subsection{Panel admin --- /admin tab Pedidos}
+
+\begin{itemize}
+  \item Tabla con todos los pedidos de todos los clientes
+  \item Columnas: Cliente, Email, Tracking, Descripción, Fecha, Peso (lb), Total (\$), Estado
+  \item Estado editable con \texttt{<select>} inline, guarda al cambiar
+  \item Peso y Total: \texttt{<input type="number">} que guardan al perder foco (\textit{auto-save on blur})
+\end{itemize}
+
+% ==========================================================
+\section{Panel de Administración}
+
+\subsection{Protección por grupo Cognito}
+
+\begin{lstlisting}[language=bash, caption={Verificacion de rol admin en /admin/page.tsx}]
+const session = await fetchAuthSession()
+const groups = session.tokens?.idToken
+  ?.payload['cognito:groups'] as string[] ?? []
+if (!groups.includes('admin')) {
+  router.replace('/casillero')
+  return
+}
+\end{lstlisting}
+
+Los usuarios que no pertenecen al grupo \texttt{admin} de Cognito son redirigidos
+a \texttt{/casillero} aunque conozcan la URL del panel.
+
+\subsection{Tabs del dashboard}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Tab} & \textbf{Datos} & \textbf{Fuente} \\
+\midrule
+Usuarios & Lista de cuentas de Cognito & \texttt{GET /admin/users} \\
+Pedidos & Todos los pedidos del sistema & \texttt{GET /admin/orders} \\
+\bottomrule
+\end{tabular}
+\caption{Tabs del panel de administración}
+\end{table}
+
+% ==========================================================
+\section{Navbar y Menú de Usuario}
+
+El \texttt{Navbar} detecta la sesión en cada cambio de ruta (\texttt{useEffect} sobre
+\texttt{pathname}). Cuando hay sesión activa muestra el nombre del usuario con un
+\textbf{dropdown} al hacer click:
+
+\begin{itemize}
+  \item \textbf{Mi casillero} → \texttt{/casillero}
+  \item \textbf{Cuenta} → \texttt{/cuenta}
+  \item \textbf{Cerrar sesión} → llama a \texttt{logoutUser()} y redirige a \texttt{/}
+\end{itemize}
+
+El dropdown se cierra automáticamente al hacer click fuera (listener
+\texttt{mousedown} con \texttt{useRef}).
+
+% ==========================================================
+\section{Página de Cuenta --- /cuenta}
+
+Permite al usuario autenticado gestionar su perfil:
+
+\begin{itemize}
+  \item \textbf{Datos editables:} nombre, apellido, móvil, teléfono
+  \item \textbf{No editables desde aquí:} email ni contraseña
+  \item \textbf{Guardar:} llama a \texttt{updateCurrentUser()} que usa
+    \texttt{updateUserAttributes()} de Amplify
+  \item \textbf{Eliminar cuenta:} doble confirmación. Llama a \texttt{deleteCurrentUser()}
+    que ejecuta \texttt{deleteUser()} de Amplify, eliminando la cuenta de Cognito.
+    Los pedidos en DynamoDB se \textbf{conservan} como registro interno.
+\end{itemize}
+
+% ==========================================================
+\section{Variables de Entorno}
+
+\subsection{Variables en Amplify Console}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Variable} & \textbf{Valor} \\
+\midrule
+\texttt{NEXT\_PUBLIC\_COGNITO\_USER\_POOL\_ID} & \texttt{us-east-1\_Bphs6nkUf} \\
+\texttt{NEXT\_PUBLIC\_COGNITO\_CLIENT\_ID} & \texttt{5fqqogr9akgphaabk9jk4tl3ap} \\
+\texttt{NEXT\_PUBLIC\_ADMIN\_API\_URL} & \texttt{https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod} \\
+\bottomrule
+\end{tabular}
+\caption{Variables de entorno en Amplify Console}
+\end{table}
+
+\subsection{Para desarrollo local}
+
+Crear el archivo \texttt{.env.local} en la raíz del proyecto. Este archivo está en
+\texttt{.gitignore} y \textbf{nunca debe subirse al repositorio}.
+
+\begin{lstlisting}[language=bash, caption={.env.local --- solo para desarrollo}]
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_Bphs6nkUf
+NEXT_PUBLIC_COGNITO_CLIENT_ID=5fqqogr9akgphaabk9jk4tl3ap
+NEXT_PUBLIC_ADMIN_API_URL=https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod
+\end{lstlisting}
+
+% ==========================================================
+\section{AWS Amplify Hosting}
+
+\subsection{Configuración}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+App ID & \texttt{d3udh5pv9ejzs2} \\
+Rama & \texttt{master} \\
+Dominio & \texttt{nexocourier.com} \\
+CloudFront URL & \texttt{dxykvodz7xo2w.cloudfront.net} \\
+Región & \texttt{us-east-1} \\
+SSL & AWS Certificate Manager (automático) \\
+\bottomrule
+\end{tabular}
+\caption{Configuración de Amplify Hosting}
+\end{table}
+
+\subsection{Archivo amplify.yml}
+
+\begin{lstlisting}[language=yaml, caption={amplify.yml}]
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci --legacy-peer-deps
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+\end{lstlisting}
+
+% ==========================================================
+\section{DNS y Dominio}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Tipo} & \textbf{Nombre} & \textbf{Valor} & \textbf{Proxy} & \textbf{TTL} \\
+\midrule
+CNAME & \texttt{www} & \texttt{dxykvodz7xo2w.cloudfront.net} & DNS only & Auto \\
+CNAME & \texttt{@} & \texttt{dxykvodz7xo2w.cloudfront.net} & DNS only & Auto \\
+\bottomrule
+\end{tabular}
+\caption{Registros DNS en Cloudflare}
+\end{table}
+
+\begin{nexobox}
+\textbf{Importante:} Los registros CNAME deben estar en modo \textbf{DNS only}
+(nube gris en Cloudflare), \textbf{no} en modo Proxy (nube naranja). Con el proxy
+activo el certificado SSL de AWS no puede validarse.
+\end{nexobox}
+
+% ==========================================================
+\section{Diseño y Sistema Visual}
+
+\subsection{Paleta de colores}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Token Tailwind} & \textbf{Hex} & \textbf{Uso} \\
+\midrule
+\texttt{space-black} & \texttt{\#0A0A0F} & Fondo principal de páginas \\
+\texttt{midnight} & \texttt{\#0F0F18} & Fondo de cards y paneles \\
+\texttt{cyan} & \texttt{\#00D4FF} & Color de marca, botones, CTAs \\
+\texttt{ghost} & \texttt{\#E8E8F0} & Texto principal \\
+\texttt{slate} & \texttt{\#6B7280} & Texto secundario, placeholders \\
+\texttt{status-green} & \texttt{\#10B981} & Estados positivos \\
+\texttt{status-yellow} & \texttt{\#F59E0B} & Advertencias, pendientes \\
+\texttt{status-red} & \texttt{\#EF4444} & Errores y acciones destructivas \\
+\bottomrule
+\end{tabular}
+\caption{Paleta de colores del sistema de diseño}
+\end{table}
+
+\subsection{Tipografía}
+
+\begin{itemize}
+  \item \textbf{Familia:} Inter (Google Fonts, cargada con \texttt{next/font/google})
+  \item \textbf{Pesos:} 400, 500, 600, 700
+  \item \textbf{Variable CSS:} \texttt{--font-inter}
+\end{itemize}
+
+% ==========================================================
+\section{Comandos de Desarrollo}
+
+\begin{lstlisting}[language=bash, caption={Comandos frecuentes}]
+# Instalar dependencias (primera vez)
+npm install --legacy-peer-deps
+
+# Servidor de desarrollo local
+npm run dev
+# Disponible en: http://localhost:3000
+
+# Verificar build antes de push
+npm run build
+
+# Deploy a produccion
+git add <archivos>
+git commit -m "tipo: descripcion"
+git push
+# Amplify detecta el push y despliega en ~3 minutos
+\end{lstlisting}
+
+% ==========================================================
+\section{Repositorio y Organización AWS}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Repositorio & \texttt{https://github.com/nexo-git/nexocode} \\
+Rama principal & \texttt{master} \\
+Organización GitHub & \texttt{nexo-git} \\
+Usuario de commits & \texttt{AleKai-bot} \\
+\midrule
+Cuenta AWS prod & \texttt{nexo-prod} (769953010359) \\
+Región de todos los recursos & \texttt{us-east-1} \\
+\bottomrule
+\end{tabular}
+\caption{Repositorio y cuentas AWS}
+\end{table}
+
+\section*{Glosario}
+
+\begin{description}
+  \item[\textbf{App Router}] Sistema de enrutamiento de Next.js 14 basado en la
+    estructura de carpetas dentro de \texttt{src/app/}.
+  \item[\textbf{Auto-save on blur}] Patrón de UX donde un campo guarda su valor
+    automáticamente cuando el usuario hace click fuera de él, sin botón de guardar.
+  \item[\textbf{Double opt-in}] Flujo de registro que requiere confirmar la dirección
+    de correo con un código antes de activar la cuenta.
+  \item[\textbf{JWT}] JSON Web Token. Formato de token firmado que Cognito emite
+    tras la autenticación exitosa.
+  \item[\textbf{localStorage}] Almacenamiento del navegador donde Amplify v6 guarda
+    los tokens de sesión. A diferencia de las cookies, no es accesible desde el
+    Edge Runtime de Next.js.
+  \item[\textbf{NEXT\_PUBLIC\_}] Prefijo de Next.js que expone variables de entorno
+    al navegador del cliente.
+  \item[\textbf{Cognito Authorizer}] Componente de API Gateway que valida el JWT
+    de cada request antes de invocar el Lambda, extrayendo los claims automáticamente.
+  \item[\textbf{Voseo}] Forma pronominal del español costarricense. Parte de la
+    voz de marca nexo en toda la interfaz.
+\end{description}
+
+\vfill
+\begin{center}
+  \begin{tikzpicture}
+    \fill[nexoBlack] (0,0) rectangle (\textwidth, 0.8cm);
+    \node[anchor=west, text=nexoSlate, font=\small]
+      at (0.3cm, 0.4cm) {nexo courier --- Confidencial --- Uso Interno --- v2.0};
+    \node[anchor=east, text=nexoCyan, font=\small\itshape]
+      at (\textwidth-0.3cm, 0.4cm) {Tu puente entre dos mundos.};
+  \end{tikzpicture}
+\end{center}
+
+\end{document}
