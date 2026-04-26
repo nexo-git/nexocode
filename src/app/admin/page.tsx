@@ -58,8 +58,11 @@ export default function AdminPage() {
   const apiUrl = process.env.NEXT_PUBLIC_ADMIN_API_URL
 
   useEffect(() => {
-    getCurrentUser().then((user) => {
+    getCurrentUser().then(async (user) => {
       if (!user) { router.push('/login'); return }
+      const session = await fetchAuthSession()
+      const groups = (session.tokens?.idToken?.payload['cognito:groups'] as string[]) ?? []
+      if (!groups.includes('admin')) { router.replace('/casillero'); return }
       fetchUsers()
       fetchOrders()
     })
