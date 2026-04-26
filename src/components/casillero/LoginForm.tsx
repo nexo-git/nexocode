@@ -31,9 +31,9 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     setServerError('')
-    const result = loginUser(data.email, data.password)
+    const result = await loginUser(data.email, data.password)
     if ('error' in result) {
       setServerError(result.error)
     } else {

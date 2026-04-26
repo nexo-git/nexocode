@@ -26,12 +26,12 @@ export default function Navbar() {
 
   // Reload auth state on every route change
   useEffect(() => {
-    setUser(getCurrentUser())
+    getCurrentUser().then(setUser)
     setMenuOpen(false)
   }, [pathname])
 
-  const handleLogout = () => {
-    logoutUser()
+  const handleLogout = async () => {
+    await logoutUser()
     setUser(null)
     router.push('/')
   }

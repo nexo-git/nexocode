@@ -1,78 +1,110 @@
+import {
+  signUp,
+  signIn,
+  signOut,
+  getCurrentUser as getAmplifyUser,
+  fetchUserAttributes,
+  updateUserAttributes,
+  deleteUser,
+  type SignUpInput,
+} from 'aws-amplify/auth'
 import type { NexoUser, RegisterData } from '@/types/casillero'
 import { NEXO_WAREHOUSE_ADDRESS, NEXO_WAREHOUSE_PHONE } from '@/lib/constants'
 
-const USERS_KEY = 'nexo_users'
-const SESSION_KEY = 'nexo_session'
-
-function getUsers(): Record<string, NexoUser & { password: string }> {
-  if (typeof window === 'undefined') return {}
+export async function registerUser(data: RegisterData): Promise<{ user: NexoUser } | { error: string }> {
   try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) ?? '{}')
-  } catch {
-    return {}
+    await signUp({
+      username: data.email.toLowerCase().trim(),
+      password: data.password,
+      options: {
+        userAttributes: {
+          email: data.email.toLowerCase().trim(),
+          given_name: data.nombre.trim(),
+          family_name: data.apellido?.trim() ?? '',
+          phone_number: data.movil.trim() ? undefined : undefined,
+          'custom:tipo': data.tipo,
+          'custom:movil': data.movil.trim(),
+          'custom:telefono': data.telefono?.trim() ?? '',
+        },
+      },
+    } as SignUpInput)
+
+    // Auto login after signup
+    await signIn({ username: data.email.toLowerCase().trim(), password: data.password })
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Error al iniciar sesión después del registro.' }
+    return { user }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al registrar la cuenta.'
+    if (message.includes('UsernameExistsException') || message.includes('already exists')) {
+      return { error: 'Ya existe una cuenta con ese correo electrónico.' }
+    }
+    return { error: message }
   }
 }
 
-function saveUsers(users: Record<string, NexoUser & { password: string }>) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
-
-export function registerUser(data: RegisterData): { user: NexoUser } | { error: string } {
-  const users = getUsers()
-  const emailKey = data.email.toLowerCase().trim()
-
-  if (users[emailKey]) {
-    return { error: 'Ya existe una cuenta con ese correo electrónico.' }
-  }
-
-  const user: NexoUser & { password: string } = {
-    id: `NX-${Date.now()}`,
-    nombre: data.nombre.trim(),
-    apellido: data.apellido?.trim() ?? '',
-    tipo: data.tipo,
-    email: emailKey,
-    movil: data.movil.trim(),
-    telefono: data.telefono.trim(),
-    createdAt: new Date().toISOString(),
-    password: data.password,
-  }
-
-  users[emailKey] = user
-  saveUsers(users)
-
-  // Start session
-  const { password: _, ...safeUser } = user
-  localStorage.setItem(SESSION_KEY, JSON.stringify(safeUser))
-
-  return { user: safeUser }
-}
-
-export function loginUser(email: string, password: string): { user: NexoUser } | { error: string } {
-  const users = getUsers()
-  const emailKey = email.toLowerCase().trim()
-  const found = users[emailKey]
-
-  if (!found || found.password !== password) {
-    return { error: 'Correo o contraseña incorrectos.' }
-  }
-
-  const { password: _, ...safeUser } = found
-  localStorage.setItem(SESSION_KEY, JSON.stringify(safeUser))
-  return { user: safeUser }
-}
-
-export function getCurrentUser(): NexoUser | null {
-  if (typeof window === 'undefined') return null
+export async function loginUser(email: string, password: string): Promise<{ user: NexoUser } | { error: string }> {
   try {
-    const raw = localStorage.getItem(SESSION_KEY)
-    return raw ? (JSON.parse(raw) as NexoUser) : null
+    await signIn({ username: email.toLowerCase().trim(), password })
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Error al obtener la sesión.' }
+    return { user }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al iniciar sesión.'
+    if (message.includes('NotAuthorizedException') || message.includes('Incorrect')) {
+      return { error: 'Correo o contraseña incorrectos.' }
+    }
+    if (message.includes('UserNotConfirmedException')) {
+      return { error: 'Tu cuenta no ha sido verificada. Revisá tu correo.' }
+    }
+    return { error: message }
+  }
+}
+
+export async function getCurrentUser(): Promise<NexoUser | null> {
+  try {
+    await getAmplifyUser()
+    const attrs = await fetchUserAttributes()
+    return {
+      id: attrs.sub ?? '',
+      nombre: attrs.given_name ?? '',
+      apellido: attrs.family_name ?? '',
+      tipo: (attrs['custom:tipo'] as 'persona' | 'empresa') ?? 'persona',
+      email: attrs.email ?? '',
+      movil: attrs['custom:movil'] ?? '',
+      telefono: attrs['custom:telefono'] ?? '',
+      createdAt: '',
+    }
   } catch {
     return null
   }
 }
 
-export function logoutUser() {
-  localStorage.removeItem(SESSION_KEY)
+export async function updateCurrentUser(data: Partial<Pick<NexoUser, 'nombre' | 'apellido' | 'movil' | 'telefono'>>): Promise<{ success: true } | { error: string }> {
+  try {
+    const attrs: Record<string, string> = {}
+    if (data.nombre) attrs.given_name = data.nombre
+    if (data.apellido !== undefined) attrs.family_name = data.apellido
+    if (data.movil) attrs['custom:movil'] = data.movil
+    if (data.telefono !== undefined) attrs['custom:telefono'] = data.telefono
+    await updateUserAttributes({ userAttributes: attrs })
+    return { success: true }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : 'Error al actualizar.' }
+  }
+}
+
+export async function deleteCurrentUser(): Promise<{ success: true } | { error: string }> {
+  try {
+    await deleteUser()
+    return { success: true }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : 'Error al eliminar la cuenta.' }
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  await signOut()
 }
 
 export function generateAddress(nombre: string, apellido = ''): string {

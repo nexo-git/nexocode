@@ -51,9 +51,9 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
 
   const tipo = watch('tipo')
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     setServerError('')
-    const result = registerUser({
+    const result = await registerUser({
       ...data,
       telefono: data.telefono ?? '',
       terminos: true,

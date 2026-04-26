@@ -15,13 +15,14 @@ export default function PedidosPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const current = getCurrentUser()
-    if (!current) {
-      router.replace('/login')
-    } else {
-      setUser(current)
-      setReady(true)
-    }
+    getCurrentUser().then((current) => {
+      if (!current) {
+        router.replace('/login')
+      } else {
+        setUser(current)
+        setReady(true)
+      }
+    })
   }, [router])
 
   if (!ready) return null

@@ -13,12 +13,11 @@ export default function CasilleroPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    setUser(getCurrentUser())
-    setReady(true)
+    getCurrentUser().then((u) => { setUser(u); setReady(true) })
   }, [])
 
-  const handleLogout = () => {
-    logoutUser()
+  const handleLogout = async () => {
+    await logoutUser()
     setUser(null)
   }
 
