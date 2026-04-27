@@ -8,12 +8,16 @@ import { getMyOrders, addOrder } from '@/lib/orders'
 import { whatsappLink } from '@/lib/constants'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
+import LoyaltyBar from '@/components/pedidos/LoyaltyBar'
 import type { NexoUser, NexoOrder } from '@/types/casillero'
 
 const statusLabel: Record<string, { label: string; color: string }> = {
-  en_ruta:   { label: 'En ruta',   color: 'bg-blue-500/10 text-blue-400' },
-  atascado:  { label: 'Atascado',  color: 'bg-status-yellow/10 text-status-yellow' },
-  entregado: { label: 'Entregado', color: 'bg-status-green/10 text-status-green' },
+  en_ruta:         { label: 'En Ruta',                    color: 'bg-blue-500/10 text-blue-400' },
+  atascado_aduana: { label: 'Atascado en Aduana',         color: 'bg-status-yellow/10 text-status-yellow' },
+  bodega_cr:       { label: 'En Bodega CR',               color: 'bg-cyan/10 text-cyan' },
+  pendiente_pago:  { label: 'Pendiente de Pago',          color: 'bg-orange-500/10 text-orange-400' },
+  pagado_en_ruta:  { label: 'Pagado · En Ruta a tu Puerta', color: 'bg-emerald-400/10 text-emerald-400' },
+  entregado:       { label: 'Entregado',                  color: 'bg-status-green/10 text-status-green' },
 }
 
 export default function PedidosPage() {
@@ -107,6 +111,9 @@ export default function PedidosPage() {
           </form>
         )}
 
+        {/* Barra de fidelidad */}
+        <LoyaltyBar orders={orders} />
+
         {/* Lista de pedidos */}
         {orders.length > 0 ? (
           <div className="space-y-3">
@@ -127,7 +134,7 @@ export default function PedidosPage() {
                         Agregado el {new Date(order.startDate).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                       {order.peso != null && (
-                        <span className="text-xs text-ghost/60">{order.peso} lb</span>
+                        <span className="text-xs text-ghost/60">{order.peso} kg</span>
                       )}
                       {order.totalPagado != null && (
                         <span className="text-xs font-medium text-cyan">${order.totalPagado.toFixed(2)}</span>
@@ -149,9 +156,9 @@ export default function PedidosPage() {
               Usá el botón <span className="text-ghost">"Agregar pedido"</span> para registrar tu primer envío con el número de tracking.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/cotizar">
+              <Link href="/casillero">
                 <Button size="md" icon={<ArrowRight size={16} />} iconPosition="right">
-                  Cotizá tu primer envío
+                  Abrir mi casillero
                 </Button>
               </Link>
               <a

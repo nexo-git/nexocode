@@ -11,7 +11,7 @@ export function whatsappLink(message?: string): string {
 
 export const NAV_LINKS = [
   { label: 'Cómo funciona', href: '/#como-funciona' },
-  { label: 'Cotizar',       href: '/cotizar' },
+  { label: 'Casillero Gratis', href: '/casillero' },
   { label: 'Asistente',     href: '/asistente' },
   { label: 'Nosotros',      href: '/nosotros' },
 ]

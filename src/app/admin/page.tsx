@@ -21,15 +21,21 @@ function getAttr(user: CognitoUser, name: string) {
 }
 
 const statusOptions: { value: OrderStatus; label: string }[] = [
-  { value: 'en_ruta',   label: 'En ruta' },
-  { value: 'atascado',  label: 'Atascado' },
-  { value: 'entregado', label: 'Entregado' },
+  { value: 'en_ruta',        label: 'En Ruta' },
+  { value: 'atascado_aduana', label: 'Atascado en Aduana' },
+  { value: 'bodega_cr',      label: 'En Bodega CR' },
+  { value: 'pendiente_pago', label: 'Pendiente de Pago' },
+  { value: 'pagado_en_ruta', label: 'Pagado · En Ruta a tu Puerta' },
+  { value: 'entregado',      label: 'Entregado' },
 ]
 
 const statusStyle: Record<OrderStatus, string> = {
-  en_ruta:   'bg-blue-500/10 text-blue-400',
-  atascado:  'bg-status-yellow/10 text-status-yellow',
-  entregado: 'bg-status-green/10 text-status-green',
+  en_ruta:        'bg-blue-500/10 text-blue-400',
+  atascado_aduana: 'bg-status-yellow/10 text-status-yellow',
+  bodega_cr:      'bg-cyan/10 text-cyan',
+  pendiente_pago: 'bg-orange-500/10 text-orange-400',
+  pagado_en_ruta: 'bg-emerald-400/10 text-emerald-400',
+  entregado:      'bg-status-green/10 text-status-green',
 }
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -266,7 +272,7 @@ export default function AdminPage() {
                       <th className="text-left px-5 py-4 hidden md:table-cell">Tracking</th>
                       <th className="text-left px-5 py-4 hidden lg:table-cell">Descripción</th>
                       <th className="text-left px-5 py-4 hidden lg:table-cell">Fecha</th>
-                      <th className="text-left px-5 py-4 hidden xl:table-cell">Peso (lb)</th>
+                      <th className="text-left px-5 py-4 hidden xl:table-cell">Peso (kg)</th>
                       <th className="text-left px-5 py-4 hidden xl:table-cell">Total ($)</th>
                       <th className="text-left px-5 py-4">Estado</th>
                     </tr>

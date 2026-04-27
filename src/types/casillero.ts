@@ -1,5 +1,5 @@
 export type UserTipo = 'persona' | 'empresa'
-export type OrderStatus = 'en_ruta' | 'atascado' | 'entregado'
+export type OrderStatus = 'en_ruta' | 'atascado_aduana' | 'bodega_cr' | 'pendiente_pago' | 'pagado_en_ruta' | 'entregado'
 
 export interface NexoOrder {
   orderId: string
