@@ -1,0 +1,723 @@
+\documentclass[12pt,a4paper]{article}
+
+% ---------- Paquetes ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{mdframed}
+\usepackage{lmodern}
+\usepackage[scaled=0.95]{helvet}
+\usepackage{courier}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+
+% ---------- Colores de marca nexo ----------
+\definecolor{nexoBlack}{HTML}{0A0E1A}
+\definecolor{nexoCyan}{HTML}{00D4FF}
+\definecolor{nexoMidnight}{HTML}{1A2744}
+\definecolor{nexoGhost}{HTML}{F4F7FC}
+\definecolor{nexoSlate}{HTML}{8A95A8}
+\definecolor{nexoGreen}{HTML}{00E5A0}
+\definecolor{nexoAmber}{HTML}{FFB800}
+\definecolor{nexoRed}{HTML}{FF4D6A}
+\definecolor{codeBg}{HTML}{F4F7FC}
+
+% ---------- Listings ----------
+\lstset{
+  backgroundcolor=\color{codeBg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{nexoCyan!80!black}\bfseries,
+  stringstyle=\color{nexoAmber!80!black},
+  commentstyle=\color{nexoSlate}\itshape,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  rulecolor=\color{nexoSlate!30},
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{nexoSlate},
+  numbersep=8pt,
+  tabsize=4,
+  xleftmargin=1.5em,
+}
+
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,yes,no},
+  keywordstyle=\color{nexoCyan!80!black}\bfseries,
+  sensitive=false,
+  comment=[l]{\#},
+  commentstyle=\color{nexoSlate}\itshape,
+  stringstyle=\color{nexoAmber!80!black},
+  morestring=[b]', morestring=[b]",
+}
+
+% ---------- Encabezado / pie de página ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[L]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[nexoBlack] (current page.north west)
+      rectangle ([yshift=-1.1cm]current page.north east);
+    \node[anchor=west, text=white, font=\bfseries\small]
+      at ([xshift=2.5cm, yshift=-0.55cm]current page.north west)
+      {\textcolor{nexoCyan}{nexo} \textcolor{nexoSlate}{---}\ Infraestructura Backend};
+    \node[anchor=east, text=nexoSlate, font=\small]
+      at ([xshift=-2.5cm, yshift=-0.55cm]current page.north east)
+      {Documento Interno · v2.0};
+  \end{tikzpicture}%
+}
+\fancyfoot[C]{\small\textcolor{nexoSlate}{\thepage}}
+
+% ---------- Hyperref ----------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=nexoCyan!60!black,
+  urlcolor=nexoCyan!60!black,
+  pdftitle={Infraestructura Backend — nexo courier},
+  pdfauthor={nexo Engineering},
+}
+
+% ---------- Caja nexo ----------
+\newmdenv[
+  backgroundcolor=nexoBlack!5,
+  linecolor=nexoCyan,
+  linewidth=2pt,
+  leftline=true, rightline=false, topline=false, bottomline=false,
+  innerleftmargin=12pt, innerrightmargin=8pt,
+  innertopmargin=6pt, innerbottommargin=6pt,
+]{nexobox}
+
+% ==========================================================
+\begin{document}
+
+% ---------- PORTADA ----------
+\begin{titlepage}
+  \pagecolor{nexoBlack}
+  \color{white}
+  \centering
+  \vspace*{3cm}
+
+  {\large\textcolor{nexoSlate}\itshape Tu puente entre dos mundos.\par}
+  \vspace{1.2cm}
+
+  {\fontsize{52}{56}\selectfont\bfseries
+    \textcolor{white}{ne}\textcolor{nexoCyan}{x}\textcolor{white}{o}\par}
+  \vspace{0.4cm}
+  {\LARGE\bfseries Backend AWS --- Arquitectura Técnica\par}
+
+  \vspace{1.8cm}
+  \textcolor{nexoCyan}{\rule{0.55\textwidth}{1.5pt}}%
+  \textcolor{nexoCyan}{\large\ $\bullet$}\par
+
+  \vspace{1.5cm}
+  {\large
+    \textcolor{nexoSlate}{Empresa}\quad\textcolor{white}{nexo courier (Costa Rica)} \\[0.5em]
+    \textcolor{nexoSlate}{Sistema}\quad\textcolor{white}{Autenticación, Base de Datos, Pedidos y API} \\[0.5em]
+    \textcolor{nexoSlate}{Proveedor}\quad\textcolor{white}{Amazon Web Services (AWS)} \\[0.5em]
+    \textcolor{nexoSlate}{Cuenta AWS}\quad\textcolor{white}{nexo-prod (769953010359)} \\[0.5em]
+    \textcolor{nexoSlate}{Región}\quad\textcolor{white}{us-east-1} \\[0.5em]
+    \textcolor{nexoSlate}{Versión}\quad\textcolor{white}{2.0} \\[0.5em]
+    \textcolor{nexoSlate}{Fecha}\quad\textcolor{white}{Abril 2026}
+  }
+
+  \vfill
+  {\small\textcolor{nexoSlate}{Confidencial --- Uso Interno}}
+\end{titlepage}
+
+\pagecolor{white}
+\color{black}
+
+\tableofcontents
+\newpage
+
+% ==========================================================
+\section{Resumen Ejecutivo}
+
+\begin{nexobox}
+El backend de \textbf{nexo courier} es 100\% serverless sobre AWS. No hay servidores
+propios que mantener. Toda la infraestructura está definida como código con
+\textbf{AWS CDK} y se despliega manualmente desde la máquina del equipo técnico.
+\end{nexobox}
+
+\vspace{0.5em}
+El sistema maneja autenticación de usuarios mediante \textbf{AWS Cognito}, almacena
+perfiles en \textbf{DynamoDB nexo-users} y pedidos en \textbf{DynamoDB nexo-orders},
+y expone un API protegido a través de \textbf{Lambda + API Gateway} con autorizador
+Cognito. Todo dentro del \textit{Free Tier} de AWS para el volumen esperado en la
+fase inicial.
+
+\subsection{Stack tecnológico}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Componente} & \textbf{Tecnología} & \textbf{Proveedor} \\
+\midrule
+Autenticación & AWS Cognito User Pool & Amazon Web Services \\
+Base de datos usuarios & AWS DynamoDB (on-demand) & Amazon Web Services \\
+Base de datos pedidos & AWS DynamoDB (on-demand) & Amazon Web Services \\
+Lógica admin/usuarios & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+Lógica pedidos & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+API & AWS API Gateway REST API + Cognito Authorizer & Amazon Web Services \\
+IaC / Despliegue & AWS CDK (TypeScript) & Amazon Web Services \\
+Alertas de costo & AWS Budgets & Amazon Web Services \\
+\bottomrule
+\end{tabular}
+\caption{Stack tecnológico del backend}
+\end{table}
+
+% ==========================================================
+\section{Arquitectura General}
+
+\begin{lstlisting}[caption={Arquitectura general del backend}, numbers=none]
+  Frontend (Next.js)
+       |
+       |-- signUp / signIn / confirmSignUp ---------> Cognito User Pool
+       |                                              (nexo-users pool)
+       |
+       |-- GET/POST /orders -----> API Gateway --> Cognito Authorizer
+       |-- GET/PUT  /admin/orders      |                 |
+       |-- GET/PUT/DELETE /admin/users |            (valida JWT)
+                                       |                 |
+                                       v                 v
+                              Lambda nexo-admin-users   Lambda nexo-orders-api
+                                       |                       |
+                              +--------+--------+    +---------+---------+
+                              |                 |    |                   |
+                           Cognito           DynamoDB               DynamoDB
+                        (admin ops)         nexo-users             nexo-orders
+\end{lstlisting}
+
+\subsection*{Descripción de componentes}
+
+\begin{description}
+  \item[\textbf{Cognito User Pool}] Gestiona registro (con verificación de email),
+    login y tokens JWT. El frontend se comunica directamente usando el SDK de Amplify v6.
+  \item[\textbf{Cognito Authorizer}] Valida el JWT en cada request a API Gateway.
+    Extrae los claims (sub, email, cognito:groups) y los pasa al Lambda.
+  \item[\textbf{API Gateway}] Expone todos los endpoints REST. Todas las rutas
+    requieren token JWT válido.
+  \item[\textbf{Lambda nexo-admin-users}] CRUD de usuarios sobre Cognito y DynamoDB.
+    Solo accesible por admins.
+  \item[\textbf{Lambda nexo-orders-api}] Gestión de pedidos. Usuarios ven sus pedidos;
+    admins ven todos y actualizan estado, peso y total.
+  \item[\textbf{DynamoDB nexo-users}] Perfiles extendidos de usuarios.
+  \item[\textbf{DynamoDB nexo-orders}] Pedidos de envío registrados por los clientes.
+\end{description}
+
+% ==========================================================
+\section{AWS Cognito User Pool}
+
+\subsection{Identificadores}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+User Pool ID & \texttt{us-east-1\_Bphs6nkUf} \\
+App Client ID & \texttt{5fqqogr9akgphaabk9jk4tl3ap} \\
+Nombre & \texttt{nexo-users} \\
+Región & \texttt{us-east-1} \\
+ARN & \texttt{arn:aws:cognito-idp:us-east-1:769953010359:userpool/us-east-1\_Bphs6nkUf} \\
+\bottomrule
+\end{tabular}
+\caption{Identificadores del User Pool}
+\end{table}
+
+\subsection{Configuración}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Sign-in alias & Email (único por usuario) \\
+Auto-verificación & Email (código de 6 dígitos al registrarse) \\
+Recuperación de cuenta & Solo por email \\
+Self sign-up & Habilitado \\
+Removal policy & RETAIN \\
+\bottomrule
+\end{tabular}
+\caption{Configuración general del User Pool}
+\end{table}
+
+\subsection{Política de contraseñas}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Requisito} & \textbf{Valor} \\
+\midrule
+Longitud mínima & 8 caracteres \\
+Minúsculas & Requerido \\
+Mayúsculas & No requerido \\
+Números & Requerido \\
+Símbolos & No requerido \\
+\bottomrule
+\end{tabular}
+\caption{Política de contraseñas}
+\end{table}
+
+\subsection{Atributos del usuario}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Atributo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripción} \\
+\midrule
+\texttt{email} & Estándar & Sí & Correo electrónico, mutable \\
+\texttt{given\_name} & Estándar & Sí & Nombre, mutable \\
+\texttt{family\_name} & Estándar & No & Apellido, mutable \\
+\texttt{custom:tipo} & Personalizado & No & \texttt{persona} o \texttt{empresa} \\
+\texttt{custom:movil} & Personalizado & No & Número de móvil \\
+\texttt{custom:telefono} & Personalizado & No & Teléfono fijo \\
+\bottomrule
+\end{tabular}
+\caption{Atributos del usuario en Cognito}
+\end{table}
+
+\begin{nexobox}
+\textbf{Nota:} El atributo estándar \texttt{phone\_number} NO se usa. Los números
+de contacto se almacenan en \texttt{custom:movil} y \texttt{custom:telefono} para
+evitar el requisito de formato E.164 de Cognito.
+\end{nexobox}
+
+\subsection{Grupos}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Grupo} & \textbf{Descripción} & \textbf{Permisos} \\
+\midrule
+\texttt{admin} & Administradores de nexo & CRUD usuarios + gestión de pedidos \\
+\texttt{user} & Clientes registrados & Solo sus propios pedidos \\
+\bottomrule
+\end{tabular}
+\caption{Grupos del User Pool}
+\end{table}
+
+\subsection{App Client}
+
+\begin{description}
+  \item[\textbf{Nombre}] \texttt{nexo-web}
+  \item[\textbf{Client Secret}] No (SPA pública)
+  \item[\textbf{Auth flows:}]
+    \begin{itemize}
+      \item \texttt{USER\_PASSWORD\_AUTH} --- login directo email/contraseña
+      \item \texttt{USER\_SRP\_AUTH} --- Secure Remote Password
+    \end{itemize}
+\end{description}
+
+% ==========================================================
+\section{AWS DynamoDB}
+
+\subsection{Tabla nexo-users}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-users} \\
+Partition Key & \texttt{userId} (String) \\
+Billing Mode & PAY\_PER\_REQUEST \\
+Removal Policy & RETAIN \\
+GSI & \texttt{email-index} (PK: email) \\
+\bottomrule
+\end{tabular}
+\caption{Tabla nexo-users}
+\end{table}
+
+\begin{lstlisting}[language=bash, caption={Esquema de ítem en nexo-users}]
+{
+  "userId":    "string",    // sub de Cognito (PK)
+  "email":     "string",
+  "nombre":    "string",
+  "apellido":  "string",
+  "tipo":      "persona" | "empresa",
+  "movil":     "string",
+  "telefono":  "string",
+  "createdAt": "string"    // ISO 8601
+}
+\end{lstlisting}
+
+\subsection{Tabla nexo-orders}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-orders} \\
+Partition Key & \texttt{orderId} (String, UUID) \\
+Billing Mode & PAY\_PER\_REQUEST \\
+Removal Policy & RETAIN \\
+GSI & \texttt{userId-index} (PK: userId) \\
+\bottomrule
+\end{tabular}
+\caption{Tabla nexo-orders}
+\end{table}
+
+\begin{lstlisting}[language=bash, caption={Esquema de ítem en nexo-orders}]
+{
+  "orderId":        "string",   // UUID (PK)
+  "userId":         "string",   // sub de Cognito del dueno (GSI)
+  "userName":       "string",   // para display en admin
+  "userEmail":      "string",   // para display en admin
+  "trackingNumber": "string",
+  "description":    "string",
+  "startDate":      "string",   // ISO 8601
+  "status":         "en_ruta" | "atascado" | "entregado",
+  "peso":           number,     // libras, opcional, lo carga el admin
+  "totalPagado":    number,     // USD, opcional, lo carga el admin
+  "updatedAt":      "string"    // ISO 8601
+}
+\end{lstlisting}
+
+\begin{nexobox}
+\textbf{Separación de responsabilidades:} Las credenciales (contraseña hasheada,
+tokens JWT) viven exclusivamente en Cognito. DynamoDB solo almacena datos de negocio.
+Los pedidos de usuarios eliminados se \textbf{conservan} como registro histórico.
+\end{nexobox}
+
+% ==========================================================
+\section{AWS Lambda}
+
+\subsection{Lambda nexo-admin-users}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-admin-users} \\
+Runtime & Node.js 20.x \\
+Handler & \texttt{index.handler} \\
+Timeout & 15 segundos \\
+Variables de entorno & \texttt{USER\_POOL\_ID}, \texttt{TABLE\_NAME} \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de administración de usuarios}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Método} & \textbf{Path} & \textbf{Descripción} \\
+\midrule
+GET & \texttt{/admin/users} & Lista todos los usuarios del User Pool \\
+GET & \texttt{/admin/users/\{userId\}} & Obtiene un usuario por ID \\
+PUT & \texttt{/admin/users/\{userId\}} & Actualiza atributos de un usuario \\
+DELETE & \texttt{/admin/users/\{userId\}} & Elimina usuario de Cognito y DynamoDB \\
+\bottomrule
+\end{tabular}
+\caption{Endpoints de nexo-admin-users}
+\end{table}
+
+\subsection{Lambda nexo-orders-api}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-orders-api} \\
+Runtime & Node.js 20.x \\
+Handler & \texttt{index.handler} \\
+Timeout & 15 segundos \\
+Variables de entorno & \texttt{TABLE\_NAME} (nexo-orders) \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de gestión de pedidos}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Método} & \textbf{Path} & \textbf{Rol requerido} & \textbf{Descripción} \\
+\midrule
+POST & \texttt{/orders} & Cualquier usuario auth & Crea un nuevo pedido \\
+GET & \texttt{/orders} & Cualquier usuario auth & Lista pedidos propios (por userId del JWT) \\
+GET & \texttt{/admin/orders} & Grupo \texttt{admin} & Lista todos los pedidos (Scan) \\
+PUT & \texttt{/admin/orders/\{orderId\}} & Grupo \texttt{admin} & Actualiza status, peso, totalPagado \\
+\bottomrule
+\end{tabular}
+\caption{Endpoints de nexo-orders-api}
+\end{table}
+
+\begin{nexobox}
+\textbf{Verificación de admin en Lambda:} La función lee el claim
+\texttt{cognito:groups} del JWT (disponible en
+\texttt{event.requestContext.authorizer.claims}) y verifica que incluya
+\texttt{'admin'} antes de ejecutar operaciones privilegiadas. Si no es admin,
+retorna \texttt{403 Acceso denegado}.
+\end{nexobox}
+
+\subsection{Permisos IAM de las Lambdas}
+
+\textbf{nexo-admin-users} sobre Cognito:
+\begin{itemize}
+  \item \texttt{cognito-idp:ListUsers}, \texttt{AdminGetUser}
+  \item \texttt{cognito-idp:AdminUpdateUserAttributes}
+  \item \texttt{cognito-idp:AdminDeleteUser}, \texttt{AdminDisableUser}
+\end{itemize}
+
+\textbf{nexo-admin-users} sobre DynamoDB \texttt{nexo-users}: acceso completo de lectura/escritura.
+
+\textbf{nexo-orders-api} sobre DynamoDB \texttt{nexo-orders}: acceso completo de lectura/escritura (PutItem, Query, Scan, UpdateItem).
+
+% ==========================================================
+\section{AWS API Gateway}
+
+\subsection{Configuración}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-admin-api} \\
+Tipo & REST API \\
+Stage & \texttt{prod} \\
+URL Base & \texttt{https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod} \\
+Autorizador & Cognito User Pools (\texttt{nexo-cognito-authorizer}) \\
+\bottomrule
+\end{tabular}
+\caption{Configuración de API Gateway}
+\end{table}
+
+\subsection{Cognito Authorizer}
+
+Todas las rutas requieren un token JWT válido en el header \texttt{Authorization}.
+API Gateway valida la firma y expiración del token contra el User Pool antes de
+invocar el Lambda. El Lambda recibe los claims directamente en
+\texttt{event.requestContext.authorizer.claims}.
+
+\subsection{CORS}
+
+\begin{itemize}
+  \item \textbf{Allow Origins:} \texttt{*}
+  \item \textbf{Allow Methods:} GET, POST, PUT, DELETE, OPTIONS
+  \item \textbf{Allow Headers:} Authorization, Content-Type
+  \item \textbf{Preflight:} Manejado automáticamente (OPTIONS)
+\end{itemize}
+
+\subsection{Árbol de recursos}
+
+\begin{lstlisting}[language=bash, caption={Estructura de recursos en API Gateway}, numbers=none]
+/
+├── orders/
+│   ├── GET    --> nexo-orders-api  (pedidos del usuario autenticado)
+│   └── POST   --> nexo-orders-api  (crear pedido)
+│
+└── admin/
+    ├── users/
+    │   ├── GET            --> nexo-admin-users  (listar usuarios)
+    │   └── {userId}/
+    │       ├── GET        --> nexo-admin-users  (obtener usuario)
+    │       ├── PUT        --> nexo-admin-users  (actualizar usuario)
+    │       └── DELETE     --> nexo-admin-users  (eliminar usuario)
+    │
+    └── orders/
+        ├── GET            --> nexo-orders-api   (todos los pedidos)
+        └── {orderId}/
+            └── PUT        --> nexo-orders-api   (actualizar pedido)
+
+Todas las rutas requieren: Authorization: <JWT de Cognito>
+\end{lstlisting}
+
+% ==========================================================
+\section{AWS CDK --- Infrastructure as Code}
+
+\subsection{Stack}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Stack Name & \texttt{NexoStack} \\
+Cuenta & \texttt{769953010359} (nexo-prod) \\
+Región & \texttt{us-east-1} \\
+Stack ARN & \texttt{arn:aws:cloudformation:us-east-1:769953010359:stack/NexoStack/...} \\
+\bottomrule
+\end{tabular}
+\caption{Datos del stack CDK}
+\end{table}
+
+\subsection{Outputs del stack}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Output} & \textbf{Valor} \\
+\midrule
+\texttt{UserPoolId} & \texttt{us-east-1\_Bphs6nkUf} \\
+\texttt{UserPoolClientId} & \texttt{5fqqogr9akgphaabk9jk4tl3ap} \\
+\texttt{ApiUrl} & \texttt{https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod/} \\
+\texttt{UsersTableName} & \texttt{nexo-users} \\
+\texttt{OrdersTableName} & \texttt{nexo-orders} \\
+\bottomrule
+\end{tabular}
+\caption{Outputs del stack CDK}
+\end{table}
+
+\subsection{Comandos de despliegue}
+
+\begin{lstlisting}[language=bash, caption={Despliegue manual de infraestructura}]
+# Desde la carpeta infrastructure/
+cd infrastructure/
+
+# Ver cambios antes de aplicar (siempre recomendado)
+npx cdk diff
+
+# Desplegar
+npx cdk deploy --require-approval never
+\end{lstlisting}
+
+\begin{nexobox}
+\textbf{Política de deploy:} El despliegue de infraestructura es \textbf{manual y
+deliberado}. No está integrado en el pipeline de CI/CD de Amplify. Siempre ejecutar
+\texttt{cdk diff} antes de \texttt{cdk deploy} para revisar los cambios antes
+de aplicarlos en producción.
+\end{nexobox}
+
+% ==========================================================
+\section{AWS Budgets --- Alerta de Costos}
+
+Se configura una alerta mensual de \textbf{\$20 USD} con dos notificaciones
+al correo \texttt{nexxo.courier+prod@gmail.com}:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Alerta} & \textbf{Umbral} & \textbf{Descripción} \\
+\midrule
+Aviso & 80\% (\$16 USD) & Gasto inusual, revisar servicios \\
+Crítica & 100\% (\$20 USD) & Límite alcanzado \\
+\bottomrule
+\end{tabular}
+\caption{Alertas de presupuesto mensual}
+\end{table}
+
+\begin{nexobox}
+\textbf{Importante:} Los budgets de AWS \textbf{no bloquean} el gasto, solo notifican.
+Para el volumen inicial de Nexo el costo real esperado es \$0--\$3/mes dentro del
+Free Tier. La alerta en \$20 es una red de seguridad ante configuraciones incorrectas
+o tráfico inesperado.
+\end{nexobox}
+
+% ==========================================================
+\section{IAM y Seguridad}
+
+\subsection{Usuario de despliegue}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Usuario IAM & \texttt{nexobot-deploy} \\
+Cuenta & \texttt{769953010359} (nexo-prod) \\
+Uso & Deploy CDK desde máquina local \\
+\bottomrule
+\end{tabular}
+\caption{Usuario IAM de despliegue}
+\end{table}
+
+\subsection{Configuración local de AWS CLI}
+
+\begin{lstlisting}[language=bash, caption={Configurar credenciales}]
+aws configure
+# AWS Access Key ID:     [key de nexobot-deploy]
+# AWS Secret Access Key: [secret de nexobot-deploy]
+# Default region name:   us-east-1
+# Default output format: json
+\end{lstlisting}
+
+% ==========================================================
+\section{Estimación de Costos}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Servicio} & \textbf{Free Tier} & \textbf{Costo excedente} & \textbf{Est. mensual} \\
+\midrule
+Cognito & 50,000 MAU & \$0.0055/MAU & \$0 \\
+DynamoDB & 25 GB + 200M req & \$1.25/M writes & \$0 \\
+Lambda & 1M req + 400K GB-s & \$0.20/millón req & \$0 \\
+API Gateway & 1M requests/mes & \$3.50/millón & \$0 \\
+AWS Budgets & 2 alertas gratis & \$0.10/alerta/mes & \$0 \\
+\midrule
+\multicolumn{3}{r}{\textbf{Total estimado fase inicial:}} & \textbf{\$0 USD} \\
+\bottomrule
+\end{tabular}
+\caption{Estimación de costos mensual}
+\end{table}
+
+% ==========================================================
+\section{Recuperación y Respaldo}
+
+\begin{description}
+  \item[\textbf{Cognito User Pool}] \texttt{removalPolicy: RETAIN} --- persiste si se
+    destruye el CDK stack. Los usuarios siempre están seguros.
+  \item[\textbf{DynamoDB nexo-users}] \texttt{removalPolicy: RETAIN} --- la tabla persiste
+    independientemente del stack.
+  \item[\textbf{DynamoDB nexo-orders}] \texttt{removalPolicy: RETAIN} --- los pedidos
+    persisten aunque se elimine la cuenta del usuario.
+  \item[\textbf{Código fuente}] Versionado en GitHub:
+    \texttt{github.com/nexo-git/nexocode/infrastructure/}
+  \item[\textbf{CloudFormation}] El estado del stack está en AWS y puede consultarse
+    en cualquier momento desde la consola.
+\end{description}
+
+\begin{nexobox}
+\textbf{Advertencia:} Nunca ejecutar \texttt{cdk destroy} en producción. A pesar del
+\texttt{RETAIN} policy, los recursos auxiliares (roles IAM, API Gateway, Lambdas)
+sí se eliminan y requieren re-deploy completo. Los datos en Cognito y DynamoDB
+sobrevivirían, pero el sistema quedaría inoperativo.
+\end{nexobox}
+
+\vfill
+\begin{center}
+  \begin{tikzpicture}
+    \fill[nexoBlack] (0,0) rectangle (\textwidth, 0.8cm);
+    \node[anchor=west, text=nexoSlate, font=\small]
+      at (0.3cm, 0.4cm) {nexo courier --- Confidencial --- Uso Interno --- v2.0};
+    \node[anchor=east, text=nexoCyan, font=\small\itshape]
+      at (\textwidth-0.3cm, 0.4cm) {Tu puente entre dos mundos.};
+  \end{tikzpicture}
+\end{center}
+
+\end{document}
