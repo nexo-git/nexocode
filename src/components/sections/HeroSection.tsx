@@ -44,15 +44,11 @@ export default function HeroSection() {
               Abrir casillero
             </Button>
           </Link>
-          <a
-            href="https://wa.me/50661132863?text=Hola%20nexo%2C%20quiero%20más%20información"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Link href="/cotizar">
             <Button variant="ghost" size="md">
-              Hablar por WhatsApp
+              Cotizá tu envío
             </Button>
-          </a>
+          </Link>
         </div>
 
         {/* Tracking recommendation */}
