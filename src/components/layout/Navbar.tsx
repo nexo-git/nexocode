@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User, Settings } from 'lucide-react'
+import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User, Settings, Sun, Moon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import { getCurrentUser, logoutUser } from '@/lib/casillero'
+import { useTheme } from '@/components/ThemeProvider'
 import type { NexoUser } from '@/types/casillero'
 
 export default function Navbar() {
@@ -19,6 +20,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const { theme, toggle } = useTheme()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -92,6 +94,14 @@ export default function Navbar() {
 
         {/* CTA — desktop */}
         <div className="hidden md:flex items-center gap-2">
+          {/* Theme toggle */}
+          <button
+            onClick={toggle}
+            aria-label="Cambiar tema"
+            className="p-2 rounded-lg text-slate hover:text-ghost hover:bg-white/5 transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           {user ? (
             <>
               <div className="relative" ref={userMenuRef}>
@@ -238,6 +248,15 @@ export default function Navbar() {
                 </a>
               </>
             )}
+
+            {/* Theme toggle — mobile */}
+            <button
+              onClick={toggle}
+              className="mt-2 flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm font-medium text-slate hover:text-ghost hover:bg-midnight transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+            </button>
           </nav>
         </div>
       )}

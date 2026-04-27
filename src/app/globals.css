@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Color tokens ── */
+:root {
+  /* Light mode (default para clientes) */
+  --c-space-black:   238 242 247;   /* #EEF2F7 — fondo página */
+  --c-midnight:      255 255 255;   /* #FFFFFF — cards */
+  --c-ghost:         10 14 26;      /* #0A0E1A — texto principal */
+  --c-slate:         78 93 108;     /* #4E5D6C — texto secundario */
+  --c-cyan:          0 185 222;     /* #00B9DE — accent (más saturado en light) */
+  --c-status-green:  0 229 160;
+  --c-status-yellow: 255 184 0;
+  --c-status-red:    255 77 106;
+}
+
+.dark {
+  /* Dark mode (default para admin) */
+  --c-space-black:   10 14 26;      /* #0A0E1A */
+  --c-midnight:      26 39 68;      /* #1A2744 */
+  --c-ghost:         244 247 252;   /* #F4F7FC */
+  --c-slate:         138 149 168;   /* #8A95A8 */
+  --c-cyan:          0 212 255;     /* #00D4FF */
+  --c-status-green:  0 229 160;
+  --c-status-yellow: 255 184 0;
+  --c-status-red:    255 77 106;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -10,7 +35,7 @@
   }
 
   body {
-    @apply bg-space-black text-ghost font-sans;
+    @apply bg-space-black text-ghost font-sans transition-colors duration-200;
   }
 
   /* Custom scrollbar */
@@ -50,7 +75,14 @@
     @apply bg-gradient-to-r from-cyan to-status-green bg-clip-text text-transparent;
   }
 
+  /* glass-card: usa overlays oscuros en light, claros en dark */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
+    @apply backdrop-blur-sm rounded-2xl;
+    background-color: rgb(0 0 0 / 0.04);
+    border: 1px solid rgb(0 0 0 / 0.08);
+  }
+  .dark .glass-card {
+    background-color: rgb(255 255 255 / 0.05);
+    border-color: rgb(255 255 255 / 0.10);
   }
 }

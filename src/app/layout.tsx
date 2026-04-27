@@ -4,6 +4,7 @@ import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AmplifyProvider from '@/components/AmplifyProvider'
+import ThemeProvider from '@/components/ThemeProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -40,9 +41,11 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         <AmplifyProvider>
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
+          <ThemeProvider>
+            <Navbar />
+            <main>{children}</main>
+            <Footer />
+          </ThemeProvider>
         </AmplifyProvider>
       </body>
     </html>

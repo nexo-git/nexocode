@@ -6,24 +6,25 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        'space-black':    '#0A0E1A',
-        'cyan':           '#00D4FF',
-        'midnight':       '#1A2744',
-        'ghost':          '#F4F7FC',
-        'slate':          '#8A95A8',
-        'status-green':   '#00E5A0',
-        'status-yellow':  '#FFB800',
-        'status-red':     '#FF4D6A',
+        'space-black':   'rgb(var(--c-space-black) / <alpha-value>)',
+        'cyan':          'rgb(var(--c-cyan) / <alpha-value>)',
+        'midnight':      'rgb(var(--c-midnight) / <alpha-value>)',
+        'ghost':         'rgb(var(--c-ghost) / <alpha-value>)',
+        'slate':         'rgb(var(--c-slate) / <alpha-value>)',
+        'status-green':  'rgb(var(--c-status-green) / <alpha-value>)',
+        'status-yellow': 'rgb(var(--c-status-yellow) / <alpha-value>)',
+        'status-red':    'rgb(var(--c-status-red) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-jetbrains)', 'monospace'],
       },
       backgroundImage: {
-        'hero-glow': 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,212,255,0.12), transparent)',
+        'hero-glow': 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,212,255,0.10), transparent)',
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
       boxShadow: {
