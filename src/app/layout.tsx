@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AmplifyProvider from '@/components/AmplifyProvider'
 import ThemeProvider from '@/components/ThemeProvider'
+import WhatsAppButton from '@/components/ui/WhatsAppButton'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -45,6 +46,7 @@ export default function RootLayout({
             <Navbar />
             <main>{children}</main>
             <Footer />
+            <WhatsAppButton />
           </ThemeProvider>
         </AmplifyProvider>
       </body>
