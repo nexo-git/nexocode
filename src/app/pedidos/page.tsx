@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, ArrowRight, MessageCircle, Plus, X, Loader2 } from 'lucide-react'
+import { Package, ArrowRight, Plus, X, Loader2 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
-import { whatsappLink } from '@/lib/constants'
+
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import LoyaltyBar from '@/components/pedidos/LoyaltyBar'
@@ -168,16 +168,12 @@ export default function PedidosPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/casillero">
                 <Button size="md" icon={<ArrowRight size={16} />} iconPosition="right">
-                  Abrir mi casillero
+                  Tu casillero
                 </Button>
               </Link>
-              <a
-                href={whatsappLink(`Hola nexo, soy ${user?.nombre} y quiero hacer mi primer envío.`)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="secondary" size="md" icon={<MessageCircle size={16} />}>
-                  Escribinos por WhatsApp
+              <a href="https://postal.ninja/es" target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="md" icon={<ArrowRight size={16} />} iconPosition="right">
+                  Rastrear paquete
                 </Button>
               </a>
             </div>
