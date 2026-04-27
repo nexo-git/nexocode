@@ -6,7 +6,8 @@ import AddressCard from '@/components/casillero/AddressCard'
 import { getCurrentUser, logoutUser } from '@/lib/casillero'
 import type { NexoUser } from '@/types/casillero'
 import Button from '@/components/ui/Button'
-import { LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { LogOut, Package } from 'lucide-react'
 
 export default function CasilleroPage() {
   const [user, setUser] = useState<NexoUser | null>(null)
@@ -49,7 +50,12 @@ export default function CasilleroPage() {
         {user ? (
           <div className="space-y-4">
             <AddressCard user={user} />
-            <div className="text-center pt-2">
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <Link href="/pedidos" className="w-full">
+                <Button variant="secondary" size="sm" className="w-full" icon={<Package size={14} />}>
+                  Tus pedidos
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
