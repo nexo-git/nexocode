@@ -139,9 +139,9 @@ export default function Navbar() {
                   Iniciar sesión
                 </Button>
               </Link>
-              <Link href="/casillero">
-                <Button size="sm" icon={<Package2 size={14} />}>
-                  Abrir casillero
+              <Link href="/cotizar">
+                <Button size="sm" icon={<ArrowRight size={14} />}>
+                  Cotizá tu envío
                 </Button>
               </Link>
             </>

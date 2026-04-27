@@ -39,9 +39,9 @@ export default function HeroSection() {
 
         {/* Main CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-          <Link href="/cotizar">
+          <Link href="/casillero">
             <Button size="md" icon={<ArrowRight size={16} />} iconPosition="right">
-              Cotizá tu envío
+              Abrir casillero
             </Button>
           </Link>
           <a
