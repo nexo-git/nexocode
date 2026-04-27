@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import CasilleroForm from '@/components/casillero/CasilleroForm'
 import AddressCard from '@/components/casillero/AddressCard'
 import { getCurrentUser, logoutUser } from '@/lib/casillero'
@@ -10,6 +11,7 @@ import Link from 'next/link'
 import { LogOut, Package } from 'lucide-react'
 
 export default function CasilleroPage() {
+  const router = useRouter()
   const [user, setUser] = useState<NexoUser | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -19,7 +21,7 @@ export default function CasilleroPage() {
 
   const handleLogout = async () => {
     await logoutUser()
-    setUser(null)
+    router.push('/')
   }
 
   if (!ready) return null
