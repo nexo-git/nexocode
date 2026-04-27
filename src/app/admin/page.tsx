@@ -127,14 +127,17 @@ export default function AdminPage() {
     setUpdatingId(null)
   }
 
-  async function handleFieldBlur(orderId: string, field: 'peso' | 'totalPagado', raw: string) {
-    const value = parseFloat(raw)
-    if (isNaN(value) || value < 0) return
+  const TARIFA_KG = 14
+
+  async function handlePesoBlur(orderId: string, raw: string) {
+    const peso = parseFloat(raw)
+    if (isNaN(peso) || peso < 0) return
     const current = orders.find((o) => o.orderId === orderId)
-    if (current?.[field] === value) return
-    const ok = await updateOrder(orderId, { [field]: value })
+    if (current?.peso === peso) return
+    const totalPagado = Math.round(peso * TARIFA_KG * 100) / 100
+    const ok = await updateOrder(orderId, { peso, totalPagado })
     if (ok) {
-      setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, [field]: value } : o))
+      setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, peso, totalPagado } : o))
     }
   }
 
@@ -300,19 +303,18 @@ export default function AdminPage() {
                             step="0.01"
                             defaultValue={order.peso ?? ''}
                             placeholder="—"
-                            onBlur={(e) => handleFieldBlur(order.orderId, 'peso', e.target.value)}
+                            onBlur={(e) => handlePesoBlur(order.orderId, e.target.value)}
                             className="w-20 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate"
                           />
                         </td>
                         <td className="px-5 py-4 hidden xl:table-cell">
                           <input
                             type="number"
-                            min="0"
-                            step="0.01"
-                            defaultValue={order.totalPagado ?? ''}
+                            disabled
+                            readOnly
+                            value={order.totalPagado != null ? order.totalPagado.toFixed(2) : ''}
                             placeholder="—"
-                            onBlur={(e) => handleFieldBlur(order.orderId, 'totalPagado', e.target.value)}
-                            className="w-24 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate"
+                            className="w-24 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs placeholder-slate opacity-60 cursor-not-allowed"
                           />
                         </td>
                         <td className="px-5 py-4">
