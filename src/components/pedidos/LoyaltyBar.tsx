@@ -1,93 +1,106 @@
 'use client'
 
 import type { NexoOrder } from '@/types/casillero'
+import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
 
-const TIERS = [
-  { kg: 10, label: 'Bronce', pct: 3 },
-  { kg: 25, label: 'Plata',  pct: 5 },
-  { kg: 50, label: 'Oro',    pct: 7 },
-]
-
-const MAX_KG = 50
-
-function getCurrentTier(kg: number) {
-  const reached = TIERS.filter((t) => kg >= t.kg)
-  return reached[reached.length - 1] ?? null
-}
+const TIER_ICONS = ['🥉', '🥈', '🥇']
 
 export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
-  const twelveMonthsAgo = new Date()
-  twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
-
-  const kgAcumulado = orders
-    .filter((o) => o.status === 'entregado' && o.peso != null && new Date(o.startDate) >= twelveMonthsAgo)
-    .reduce((sum, o) => sum + (o.peso ?? 0), 0)
-
-  const progress = Math.min((kgAcumulado / MAX_KG) * 100, 100)
-  const currentTier = getCurrentTier(kgAcumulado)
+  const { cycleKg, milestoneIdx } = calculateLoyalty(orders)
+  const next = MILESTONES[milestoneIdx]
+  const progress = Math.min((cycleKg / next.kg) * 100, 100)
 
   return (
-    <div className="bg-midnight border border-white/5 rounded-2xl p-6 mb-8">
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-cyan text-xs font-semibold tracking-widest uppercase">Nexo Fiel</p>
-        {currentTier ? (
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyan/10 text-cyan">
-            {currentTier.label} · {currentTier.pct}% descuento
-          </span>
-        ) : (
-          <span className="text-xs text-slate">Acumulá 10 kg para tu primer descuento</span>
-        )}
+    <div
+      className="mb-8 rounded-2xl border border-white/10 p-5"
+      style={{
+        background: 'rgba(var(--c-midnight) / 0.8)',
+        backdropFilter: 'blur(24px) saturate(150%)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 40px rgba(0,0,0,0.15)',
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-cyan text-[10px] font-semibold tracking-widest uppercase mb-1">Nexo Fiel</p>
+          <p className="text-ghost font-semibold text-base leading-snug">
+            {cycleKg > 0
+              ? <>{cycleKg.toFixed(1)} kg <span className="text-slate font-normal text-sm">en este ciclo</span></>
+              : '¡Empezá a acumular kg con tu primer envío!'}
+          </p>
+        </div>
+        <div className="text-right shrink-0 ml-4">
+          <p className="text-slate text-[10px] uppercase tracking-wider mb-0.5">Próximo</p>
+          <p className="text-ghost font-bold text-xl leading-none">{next.kg} kg</p>
+          <p className="text-cyan text-xs font-semibold mt-0.5">{next.pct}% off</p>
+        </div>
       </div>
 
-      <p className="text-ghost font-semibold mb-6">
-        {kgAcumulado > 0
-          ? `${kgAcumulado.toFixed(1)} kg acumulados este año`
-          : '¡Empezá a acumular kg con tu primer envío!'}
-      </p>
-
-      {/* Track + milestones */}
-      <div className="relative pb-10">
-        {/* Background track */}
-        <div className="h-2.5 bg-white/5 rounded-full">
-          {/* Fill */}
+      {/* Progress bar */}
+      <div className="mb-5">
+        <div className="h-[3px] rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <div
-            className="h-full bg-gradient-to-r from-cyan/50 to-cyan rounded-full transition-all duration-700"
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, rgba(0,185,222,0.6), rgb(0,212,255))',
+            }}
           />
         </div>
+        <div className="flex justify-between mt-1.5">
+          <span className="text-slate text-[10px]">{cycleKg.toFixed(1)} kg</span>
+          <span className="text-slate text-[10px]">{next.kg} kg</span>
+        </div>
+      </div>
 
-        {/* Milestone markers */}
-        {TIERS.map((tier) => {
-          const pos = (tier.kg / MAX_KG) * 100
-          const reached = kgAcumulado >= tier.kg
+      {/* Milestone cards */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {MILESTONES.map((m, i) => {
+          const done = i < milestoneIdx
+          const active = i === milestoneIdx
           return (
             <div
-              key={tier.kg}
-              className="absolute top-0 flex flex-col items-center"
-              style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
+              key={m.kg}
+              className="rounded-xl px-3 py-2.5 flex flex-col gap-0.5 transition-all"
+              style={{
+                background: done
+                  ? 'rgba(0,212,255,0.10)'
+                  : active
+                  ? 'rgba(0,212,255,0.06)'
+                  : 'rgba(255,255,255,0.03)',
+                border: active
+                  ? '1px solid rgba(0,212,255,0.35)'
+                  : done
+                  ? '1px solid rgba(0,212,255,0.15)'
+                  : '1px solid rgba(255,255,255,0.06)',
+              }}
             >
-              {/* Circle on track */}
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center -mt-[5px] transition-all duration-500 ${
-                reached ? 'bg-cyan border-cyan shadow-[0_0_8px_rgba(0,212,255,0.5)]' : 'bg-midnight border-white/20'
-              }`}>
-                {reached && <div className="w-1.5 h-1.5 rounded-full bg-space-black" />}
-              </div>
-              {/* Labels below */}
-              <div className="mt-2 text-center">
-                <p className={`text-xs font-bold leading-tight ${reached ? 'text-cyan' : 'text-slate'}`}>
-                  {tier.kg} kg
-                </p>
-                <p className={`text-xs leading-tight ${reached ? 'text-ghost' : 'text-slate/50'}`}>
-                  {tier.pct}%
-                </p>
-              </div>
+              <span className="text-base leading-none">{TIER_ICONS[i]}</span>
+              <span
+                className="text-[11px] font-semibold mt-1"
+                style={{ color: done || active ? 'rgb(0,212,255)' : 'rgba(138,149,168,0.6)' }}
+              >
+                {m.label}
+              </span>
+              <span
+                className="text-[10px] font-medium"
+                style={{ color: done || active ? 'rgba(244,247,252,0.8)' : 'rgba(138,149,168,0.4)' }}
+              >
+                {m.kg} kg · {m.pct}%
+              </span>
+              {done && (
+                <span className="text-[9px] text-status-green font-semibold mt-0.5">✓ Obtenido</span>
+              )}
+              {active && (
+                <span className="text-[9px] text-cyan font-semibold mt-0.5">← Siguiente</span>
+              )}
             </div>
           )
         })}
       </div>
 
-      <p className="text-slate text-xs">
-        Solo cuentan pedidos <span className="text-ghost">Entregados</span> en los últimos 12 meses. El descuento se aplica en tu próximo envío.
+      <p className="text-slate text-[10px] mt-3.5">
+        Solo cuentan pedidos <span className="text-ghost">Entregados</span>. Al cruzar cada meta, ese pedido recibe el descuento. El ciclo se reinicia al llegar a Oro.
       </p>
     </div>
   )

@@ -9,6 +9,7 @@ import { whatsappLink } from '@/lib/constants'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import LoyaltyBar from '@/components/pedidos/LoyaltyBar'
+import { calculateLoyalty } from '@/lib/loyalty'
 import type { NexoUser, NexoOrder } from '@/types/casillero'
 
 const statusLabel: Record<string, { label: string; color: string }> = {
@@ -117,14 +118,22 @@ export default function PedidosPage() {
         {/* Lista de pedidos */}
         {orders.length > 0 ? (
           <div className="space-y-3">
-            {orders.map((order) => {
+            {(() => {
+              const { discountMap } = calculateLoyalty(orders)
+              return orders.map((order) => {
               const st = statusLabel[order.status] ?? statusLabel.en_ruta
+              const discount = discountMap.get(order.orderId)
               return (
                 <div key={order.orderId} className="bg-midnight border border-white/5 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
                       <p className="text-ghost font-medium text-sm truncate">{order.trackingNumber}</p>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${st.color}`}>{st.label}</span>
+                      {discount && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 bg-cyan/10 text-cyan border border-cyan/20">
+                          ✦ {discount}% Nexo Fiel
+                        </span>
+                      )}
                     </div>
                     {order.description && (
                       <p className="text-slate text-xs truncate">{order.description}</p>
@@ -143,7 +152,8 @@ export default function PedidosPage() {
                   </div>
                 </div>
               )
-            })}
+            })
+            })()}
           </div>
         ) : (
           /* Empty state */

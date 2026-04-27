@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
 import { getAllOrders, updateOrderStatus, updateOrder } from '@/lib/orders'
+import { calculateLoyalty } from '@/lib/loyalty'
 import { Search, UserCog, Trash2, Edit, Package } from 'lucide-react'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
@@ -281,11 +282,26 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
+                    {(() => {
+                      // Calcular descuentos por usuario (cada uno tiene su propio ciclo)
+                      const byUser: Record<string, typeof orders> = {}
+                      orders.forEach((o) => { (byUser[o.userId] ??= []).push(o) })
+                      const allDiscounts = new Map<string, number>()
+                      Object.values(byUser).forEach((userOrders) => {
+                        calculateLoyalty(userOrders).discountMap.forEach((pct, id) => allDiscounts.set(id, pct))
+                      })
+                      return orders.map((order) => {
+                      const discount = allDiscounts.get(order.orderId)
+                      return (
                       <tr key={order.orderId} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td className="px-5 py-4">
                           <p className="text-ghost font-medium">{order.userName}</p>
                           <p className="text-slate text-xs">{order.userEmail}</p>
+                          {discount && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-cyan/10 text-cyan border border-cyan/20 mt-1">
+                              ✦ Nexo Fiel {discount}%
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 py-4 hidden md:table-cell text-ghost font-mono text-xs">
                           {order.trackingNumber}
@@ -332,7 +348,9 @@ export default function AdminPage() {
                           </select>
                         </td>
                       </tr>
-                    ))}
+                    )
+                    })
+                    })()}
                   </tbody>
                 </table>
               </div>
