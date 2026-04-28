@@ -24,8 +24,7 @@ function getAttr(user: CognitoUser, name: string) {
 const statusOptions: { value: OrderStatus; label: string }[] = [
   { value: 'en_ruta',         label: 'En Ruta' },
   { value: 'atascado_aduana', label: 'Atascado en Aduana' },
-  { value: 'bodega_cr',       label: 'En Bodega CR' },
-  { value: 'pendiente_pago',  label: 'Pendiente de Pago' },
+  { value: 'bodega_cr',       label: 'En Bodega CR · Pendiente de Pago' },
   { value: 'pagado_en_ruta',  label: 'Pagado · En Ruta a tu Puerta' },
   { value: 'entregado',       label: 'Entregado' },
 ]
@@ -33,7 +32,7 @@ const statusOptions: { value: OrderStatus; label: string }[] = [
 const statusStyle: Record<OrderStatus, string> = {
   en_ruta:         'bg-blue-500/10 text-blue-400',
   atascado_aduana: 'bg-status-yellow/10 text-status-yellow',
-  bodega_cr:       'bg-cyan/10 text-cyan',
+  bodega_cr:       'bg-orange-500/10 text-orange-400',
   pendiente_pago:  'bg-orange-500/10 text-orange-400',
   pagado_en_ruta:  'bg-emerald-400/10 text-emerald-400',
   entregado:       'bg-status-green/10 text-status-green',
@@ -418,14 +417,20 @@ export default function AdminPage() {
                               />
                             </td>
                             <td className="px-5 py-4 hidden xl:table-cell">
-                              <input
-                                type="number"
-                                disabled
-                                readOnly
-                                value={order.totalPagado != null ? order.totalPagado.toFixed(2) : ''}
-                                placeholder="—"
-                                className="w-24 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs placeholder-slate opacity-60 cursor-not-allowed"
-                              />
+                              {order.totalPagado != null ? (
+                                discount ? (
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="line-through text-slate text-xs">${order.totalPagado.toFixed(2)}</span>
+                                    <span className="text-xs font-semibold text-status-green">
+                                      ${(order.totalPagado * (1 - discount / 100)).toFixed(2)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-ghost text-xs">${order.totalPagado.toFixed(2)}</span>
+                                )
+                              ) : (
+                                <span className="text-slate text-xs">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-4">
                               <select
