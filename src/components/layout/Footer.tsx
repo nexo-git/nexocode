@@ -101,7 +101,7 @@ export default function Footer() {
             © {new Date().getFullYear()} nexo CR. Todos los derechos reservados.
           </p>
           <p className="text-slate text-xs">
-            Hecho con cariño en Costa Rica 🇨🇷
+            Hecho en Costa Rica 🇨🇷
           </p>
         </div>
       </div>
