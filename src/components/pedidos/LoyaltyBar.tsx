@@ -3,103 +3,115 @@
 import type { NexoOrder } from '@/types/casillero'
 import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
 
-const TIER_ICONS = ['🥉', '🥈', '🥇']
+const TIER_COLORS = [
+  { active: '#C97B3A', inactive: '#9CA3AF' }, // Bronce
+  { active: '#6B7280', inactive: '#9CA3AF' }, // Plata
+  { active: '#D4A200', inactive: '#9CA3AF' }, // Oro
+]
+
+function StarIcon({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  )
+}
 
 export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
   const { cycleKg, milestoneIdx } = calculateLoyalty(orders)
   const next = MILESTONES[milestoneIdx]
-  const progress = Math.min((cycleKg / next.kg) * 100, 100)
+
+  // Progress across the full 50kg range, segmented
+  const totalKg = 50
+  const progressPct = Math.min((cycleKg / totalKg) * 100, 100)
 
   return (
-    <div
-      className="mb-8 rounded-2xl border border-white/10 p-5"
-      style={{
-        background: 'rgba(var(--c-midnight) / 0.8)',
-        backdropFilter: 'blur(24px) saturate(150%)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 40px rgba(0,0,0,0.15)',
-      }}
-    >
+    <div className="mb-8 rounded-2xl border border-black/[0.06] bg-midnight p-5 shadow-sm dark:border-white/10">
+
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-5">
         <div>
-          <p className="text-cyan text-[10px] font-semibold tracking-widest uppercase mb-1">Nexo Fiel</p>
-          <p className="text-ghost font-semibold text-base leading-snug">
+          <p className="text-[10px] font-bold tracking-widest uppercase mb-1.5" style={{ color: '#C97B3A' }}>
+            Nexo Fiel
+          </p>
+          <p className="text-ghost font-bold text-lg leading-snug">
             {cycleKg > 0
-              ? <>{cycleKg.toFixed(1)} kg <span className="text-slate font-normal text-sm">en este ciclo</span></>
-              : '¡Empezá a acumular kg con tu primer envío!'}
+              ? <>{cycleKg.toFixed(1)} kg <span className="text-slate font-normal text-base">en este ciclo</span></>
+              : '¡Empezá a acumular\ncon tu primer envío!'}
           </p>
         </div>
-        <div className="text-right shrink-0 ml-4">
-          <p className="text-slate text-[10px] uppercase tracking-wider mb-0.5">Próximo</p>
-          <p className="text-ghost font-bold text-xl leading-none">{next.kg} kg</p>
-          <p className="text-cyan text-xs font-semibold mt-0.5">{next.pct}% off</p>
+
+        {/* Next milestone badge */}
+        <div
+          className="shrink-0 ml-4 rounded-xl px-3 py-2 text-right"
+          style={{ background: 'rgba(201,123,58,0.10)', border: '1px solid rgba(201,123,58,0.20)' }}
+        >
+          <p className="text-[10px] text-slate mb-0.5">Tu primer hito</p>
+          <p className="text-sm font-bold" style={{ color: '#C97B3A' }}>
+            {next.kg} kg → {next.pct}% off
+          </p>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mb-5">
-        <div className="h-[3px] rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+      {/* Segmented progress bar */}
+      <div className="relative mb-6">
+        <div className="h-[4px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, rgba(0,185,222,0.6), rgb(0,212,255))',
+              width: `${progressPct}%`,
+              background: 'linear-gradient(90deg, #C97B3A, #E8943A)',
             }}
           />
         </div>
-        <div className="flex justify-between mt-1.5">
-          <span className="text-slate text-[10px]">{cycleKg.toFixed(1)} kg</span>
-          <span className="text-slate text-[10px]">{next.kg} kg</span>
-        </div>
+        {/* Segment dividers */}
+        {MILESTONES.slice(0, -1).map((m) => (
+          <div
+            key={m.kg}
+            className="absolute top-0 h-[4px] w-[2px] bg-midnight"
+            style={{ left: `${(m.kg / totalKg) * 100}%` }}
+          />
+        ))}
       </div>
 
-      {/* Milestone cards */}
-      <div className="grid grid-cols-3 gap-2.5">
+      {/* Milestone circles */}
+      <div className="grid grid-cols-3 gap-3">
         {MILESTONES.map((m, i) => {
           const done = i < milestoneIdx
           const active = i === milestoneIdx
+          const color = done || active ? TIER_COLORS[i].active : TIER_COLORS[i].inactive
+          const borderColor = done || active ? TIER_COLORS[i].active : 'rgba(0,0,0,0.12)'
+          const bgColor = done || active ? `${TIER_COLORS[i].active}15` : 'transparent'
+
           return (
-            <div
-              key={m.kg}
-              className="rounded-xl px-3 py-2.5 flex flex-col gap-0.5 transition-all"
-              style={{
-                background: done
-                  ? 'rgba(0,212,255,0.10)'
-                  : active
-                  ? 'rgba(0,212,255,0.06)'
-                  : 'rgba(255,255,255,0.03)',
-                border: active
-                  ? '1px solid rgba(0,212,255,0.35)'
-                  : done
-                  ? '1px solid rgba(0,212,255,0.15)'
-                  : '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              <span className="text-base leading-none">{TIER_ICONS[i]}</span>
-              <span
-                className="text-[11px] font-semibold mt-1"
-                style={{ color: done || active ? 'rgb(0,212,255)' : 'rgba(138,149,168,0.6)' }}
+            <div key={m.kg} className="flex flex-col items-center gap-1.5">
+              {/* Circle */}
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
+                style={{
+                  border: `2px solid ${borderColor}`,
+                  background: bgColor,
+                }}
               >
+                <StarIcon color={color} />
+              </div>
+              {/* Label */}
+              <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: done || active ? color : '#9CA3AF' }}>
                 {m.label}
-              </span>
-              <span
-                className="text-[10px] font-medium"
-                style={{ color: done || active ? 'rgba(244,247,252,0.8)' : 'rgba(138,149,168,0.4)' }}
-              >
-                {m.kg} kg · {m.pct}%
-              </span>
+              </p>
+              <p className="text-[11px] font-bold text-ghost leading-none">{m.kg} kg</p>
+              <p className="text-[11px]" style={{ color: done || active ? color : '#9CA3AF' }}>
+                {m.pct}% off
+              </p>
               {done && (
-                <span className="text-[9px] text-status-green font-semibold mt-0.5">✓ Obtenido</span>
-              )}
-              {active && (
-                <span className="text-[9px] text-cyan font-semibold mt-0.5">← Siguiente</span>
+                <span className="text-[9px] text-status-green font-semibold">✓ Obtenido</span>
               )}
             </div>
           )
         })}
       </div>
 
-      <p className="text-slate text-[10px] mt-3.5">
+      <p className="text-slate text-[10px] mt-4">
         Solo cuentan pedidos <span className="text-ghost">Entregados</span>. Al cruzar cada meta, ese pedido recibe el descuento. El ciclo se reinicia al llegar a Oro.
       </p>
     </div>
