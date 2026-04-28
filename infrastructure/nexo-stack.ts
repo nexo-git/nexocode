@@ -160,7 +160,7 @@ export class NexoStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
-        const { DynamoDBClient, PutItemCommand, QueryCommand, ScanCommand, UpdateItemCommand } = require('@aws-sdk/client-dynamodb')
+        const { DynamoDBClient, PutItemCommand, QueryCommand, ScanCommand, UpdateItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb')
         const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
         const { randomUUID } = require('crypto')
 
@@ -223,6 +223,38 @@ export class NexoStack extends cdk.Stack {
               const items = (result.Items || []).map(i => unmarshall(i))
               items.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
               return { statusCode: 200, headers, body: JSON.stringify(items) }
+            }
+
+            // POST /admin/orders — crear pedido en nombre de un usuario (solo admin)
+            if (method === 'POST' && path === '/admin/orders') {
+              if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
+              const body = JSON.parse(event.body || '{}')
+              if (!body.trackingNumber || !body.userId) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'trackingNumber y userId son requeridos' }) }
+              }
+              const item = {
+                orderId: randomUUID(),
+                userId: body.userId,
+                userName: body.userName || '',
+                userEmail: body.userEmail || '',
+                trackingNumber: body.trackingNumber.trim(),
+                description: (body.description || '').trim(),
+                startDate: new Date().toISOString(),
+                status: 'en_ruta',
+                updatedAt: new Date().toISOString(),
+              }
+              await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall(item) }))
+              return { statusCode: 201, headers, body: JSON.stringify(item) }
+            }
+
+            // DELETE /admin/orders/{orderId} — eliminar pedido (solo admin)
+            if (method === 'DELETE' && orderId) {
+              if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
+              await dynamo.send(new DeleteItemCommand({
+                TableName: TABLE_NAME,
+                Key: marshall({ orderId }),
+              }))
+              return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }
 
             // PUT /admin/orders/{orderId} — actualizar pedido (solo admin)
@@ -301,7 +333,9 @@ export class NexoStack extends cdk.Stack {
     const adminOrdersResource = adminResource.addResource('orders')
     const adminOrderResource = adminOrdersResource.addResource('{orderId}')
     adminOrdersResource.addMethod('GET', ordersIntegration, authOptions)
+    adminOrdersResource.addMethod('POST', ordersIntegration, authOptions)
     adminOrderResource.addMethod('PUT', ordersIntegration, authOptions)
+    adminOrderResource.addMethod('DELETE', ordersIntegration, authOptions)
 
     // ─── Budget Alert ────────────────────────────────────────────────
     new budgets.CfnBudget(this, 'NexoBudget', {

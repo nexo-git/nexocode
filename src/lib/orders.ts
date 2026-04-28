@@ -52,6 +52,43 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus): P
   return updateOrder(orderId, { status })
 }
 
+export interface AdminOrderCreate {
+  userId: string
+  userName: string
+  userEmail: string
+  trackingNumber: string
+  description?: string
+}
+
+export async function createOrderAdmin(data: AdminOrderCreate): Promise<{ order: NexoOrder } | { error: string }> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/admin/orders`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      return { error: err.error || 'Error al crear el pedido.' }
+    }
+    const order = await res.json()
+    return { order }
+  } catch {
+    return { error: 'Error de conexión.' }
+  }
+}
+
+export async function deleteOrder(orderId: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/admin/orders/${orderId}`, { method: 'DELETE', headers })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export async function updateOrder(orderId: string, data: OrderUpdate): Promise<boolean> {
   try {
     const headers = await authHeaders()
