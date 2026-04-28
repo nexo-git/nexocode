@@ -267,6 +267,8 @@ export class NexoStack extends cdk.Stack {
               if (body.status) { exprParts.push('#s = :s'); exprNames['#s'] = 'status'; exprValues[':s'] = body.status }
               if (body.peso !== undefined) { exprParts.push('peso = :p'); exprValues[':p'] = body.peso }
               if (body.totalPagado !== undefined) { exprParts.push('totalPagado = :t'); exprValues[':t'] = body.totalPagado }
+              if (body.trackingNumber !== undefined) { exprParts.push('trackingNumber = :tr'); exprValues[':tr'] = body.trackingNumber }
+              if (body.description !== undefined) { exprParts.push('#d = :d'); exprNames['#d'] = 'description'; exprValues[':d'] = body.description }
               await dynamo.send(new UpdateItemCommand({
                 TableName: TABLE_NAME,
                 Key: marshall({ orderId }),

@@ -5,6 +5,8 @@ export interface OrderUpdate {
   status?: OrderStatus
   peso?: number
   totalPagado?: number
+  trackingNumber?: string
+  description?: string
 }
 
 const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''

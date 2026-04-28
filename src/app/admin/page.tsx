@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
 import { calculateLoyalty } from '@/lib/loyalty'
-import { Search, UserCog, Trash2, Edit, Package, Plus, X } from 'lucide-react'
+import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check } from 'lucide-react'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
@@ -60,6 +60,11 @@ export default function AdminPage() {
   const [loadingOrders, setLoadingOrders] = useState(true)
   const [ordersError, setOrdersError]     = useState('')
   const [updatingId, setUpdatingId]       = useState<string | null>(null)
+
+  // ── Editar pedido inline ─────────────────────────────────────────
+  const [editingId, setEditingId]       = useState<string | null>(null)
+  const [editTracking, setEditTracking] = useState('')
+  const [editDesc, setEditDesc]         = useState('')
 
   // ── Crear pedido ──────────────────────────────────────────────────
   const [showForm, setShowForm]         = useState(false)
@@ -142,6 +147,28 @@ export default function AdminPage() {
     const totalPagado = Math.round(peso * TARIFA_KG * 100) / 100
     const ok = await updateOrder(orderId, { peso, totalPagado })
     if (ok) setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, peso, totalPagado } : o))
+  }
+
+  function startEdit(order: NexoOrder) {
+    setEditingId(order.orderId)
+    setEditTracking(order.trackingNumber)
+    setEditDesc(order.description || '')
+  }
+
+  async function handleSaveEdit(orderId: string) {
+    if (!editTracking.trim()) return
+    const ok = await updateOrder(orderId, {
+      trackingNumber: editTracking.trim(),
+      description: editDesc.trim(),
+    })
+    if (ok) {
+      setOrders((prev) => prev.map((o) =>
+        o.orderId === orderId
+          ? { ...o, trackingNumber: editTracking.trim(), description: editDesc.trim() }
+          : o
+      ))
+    }
+    setEditingId(null)
   }
 
   async function handleDeleteOrder(orderId: string, tracking: string) {
@@ -396,11 +423,28 @@ export default function AdminPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-5 py-4 hidden md:table-cell text-ghost font-mono text-xs">
-                              {order.trackingNumber}
+                            <td className="px-5 py-4 hidden md:table-cell">
+                              {editingId === order.orderId ? (
+                                <input
+                                  value={editTracking}
+                                  onChange={(e) => setEditTracking(e.target.value)}
+                                  className="w-full bg-space-black border border-cyan/40 rounded-lg px-2 py-1.5 text-ghost font-mono text-xs focus:outline-none focus:border-cyan/70"
+                                />
+                              ) : (
+                                <span className="text-ghost font-mono text-xs">{order.trackingNumber}</span>
+                              )}
                             </td>
-                            <td className="px-5 py-4 hidden lg:table-cell text-slate max-w-[180px] truncate">
-                              {order.description || '—'}
+                            <td className="px-5 py-4 hidden lg:table-cell">
+                              {editingId === order.orderId ? (
+                                <input
+                                  value={editDesc}
+                                  onChange={(e) => setEditDesc(e.target.value)}
+                                  placeholder="—"
+                                  className="w-full bg-space-black border border-cyan/40 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/70 placeholder-slate"
+                                />
+                              ) : (
+                                <span className="text-slate text-xs truncate max-w-[180px] block">{order.description || '—'}</span>
+                              )}
                             </td>
                             <td className="px-5 py-4 hidden lg:table-cell text-slate">
                               {new Date(order.startDate).toLocaleDateString('es-CR')}
@@ -447,12 +491,43 @@ export default function AdminPage() {
                               </select>
                             </td>
                             <td className="px-5 py-4">
-                              <button
-                                onClick={() => handleDeleteOrder(order.orderId, order.trackingNumber)}
-                                className="p-2 rounded-lg hover:bg-status-red/10 text-slate hover:text-status-red transition-colors"
-                              >
-                                <Trash2 size={15} />
-                              </button>
+                              <div className="flex items-center gap-1 justify-end">
+                                {editingId === order.orderId ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleSaveEdit(order.orderId)}
+                                      className="p-2 rounded-lg hover:bg-status-green/10 text-slate hover:text-status-green transition-colors"
+                                      title="Guardar"
+                                    >
+                                      <Check size={15} />
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingId(null)}
+                                      className="p-2 rounded-lg hover:bg-white/10 text-slate hover:text-ghost transition-colors"
+                                      title="Cancelar"
+                                    >
+                                      <X size={15} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => startEdit(order)}
+                                      className="p-2 rounded-lg hover:bg-cyan/10 text-slate hover:text-cyan transition-colors"
+                                      title="Editar"
+                                    >
+                                      <Edit size={15} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteOrder(order.orderId, order.trackingNumber)}
+                                      className="p-2 rounded-lg hover:bg-status-red/10 text-slate hover:text-status-red transition-colors"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         )
