@@ -14,11 +14,19 @@ import type { NexoUser, NexoOrder } from '@/types/casillero'
 
 const statusLabel: Record<string, { label: string; color: string }> = {
   en_ruta:         { label: 'En Ruta',                          color: 'bg-blue-500/10 text-blue-400' },
-  atascado_aduana: { label: 'Atascado en Aduana',               color: 'bg-status-yellow/10 text-status-yellow' },
+  atascado_aduana: { label: 'En Aduana',                        color: 'bg-status-yellow/10 text-status-yellow' },
   bodega_cr:       { label: 'En Bodega CR · Pendiente de Pago', color: 'bg-orange-500/10 text-orange-400' },
   pendiente_pago:  { label: 'En Bodega CR · Pendiente de Pago', color: 'bg-orange-500/10 text-orange-400' },
   pagado_en_ruta:  { label: 'Pagado · En Ruta a tu Puerta',     color: 'bg-emerald-400/10 text-emerald-400' },
   entregado:       { label: 'Entregado',                        color: 'bg-status-green/10 text-status-green' },
+}
+
+function payButtonProps(status: string): { label: string; enabled: boolean } {
+  if (status === 'bodega_cr' || status === 'pendiente_pago')
+    return { label: 'Listo para Pagar', enabled: true }
+  if (status === 'pagado_en_ruta' || status === 'entregado')
+    return { label: 'Pagado', enabled: false }
+  return { label: 'Pendiente de facturar', enabled: false }
 }
 
 export default function PedidosPage() {
@@ -161,16 +169,24 @@ export default function PedidosPage() {
                         </div>
                       </div>
 
-                      {/* Botón pagar — solo cuando entregado */}
-                      {(order.status === 'bodega_cr' || order.status === 'pendiente_pago') && (
-                        <button
-                          onClick={() => alert('Próximamente — pagos con tarjeta')}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-status-green/10 text-status-green text-xs font-semibold border border-status-green/20 hover:bg-status-green/20 transition-colors shrink-0"
-                        >
-                          <CreditCard size={13} />
-                          Pagar
-                        </button>
-                      )}
+                      {/* Botón pago — siempre visible, habilitado solo en bodega_cr */}
+                      {(() => {
+                        const { label, enabled } = payButtonProps(order.status)
+                        return (
+                          <button
+                            disabled={!enabled}
+                            onClick={enabled ? () => alert('Próximamente — pagos con tarjeta') : undefined}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-colors
+                              ${enabled
+                                ? 'bg-status-green/10 text-status-green border-status-green/20 hover:bg-status-green/20 cursor-pointer'
+                                : 'bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60'
+                              }`}
+                          >
+                            <CreditCard size={13} />
+                            {label}
+                          </button>
+                        )
+                      })()}
                     </div>
                   )
                 })}

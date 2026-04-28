@@ -23,7 +23,7 @@ function getAttr(user: CognitoUser, name: string) {
 
 const statusOptions: { value: OrderStatus; label: string }[] = [
   { value: 'en_ruta',         label: 'En Ruta' },
-  { value: 'atascado_aduana', label: 'Atascado en Aduana' },
+  { value: 'atascado_aduana', label: 'En Aduana' },
   { value: 'bodega_cr',       label: 'En Bodega CR · Pendiente de Pago' },
   { value: 'pagado_en_ruta',  label: 'Pagado · En Ruta a tu Puerta' },
   { value: 'entregado',       label: 'Entregado' },
