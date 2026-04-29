@@ -360,6 +360,10 @@ export class NexoStack extends cdk.Stack {
                 startDate: new Date().toISOString(),
                 status: 'en_ruta',
                 updatedAt: new Date().toISOString(),
+                ...(body.deliveryProvince && { deliveryProvince: body.deliveryProvince }),
+                ...(body.deliveryCanton  && { deliveryCanton:  body.deliveryCanton  }),
+                ...(body.deliveryDistrict && { deliveryDistrict: body.deliveryDistrict }),
+                ...(body.deliverySenas   && { deliverySenas:   body.deliverySenas.trim() }),
               }
               await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall(item) }))
               return { statusCode: 201, headers, body: JSON.stringify(item) }

@@ -74,7 +74,15 @@ export default function PedidosPage() {
     if (!tracking.trim()) { setFormError('El número de tracking es requerido.'); return }
     setSubmitting(true)
     setFormError('')
-    const result = await addOrder({ trackingNumber: tracking.trim(), description: description.trim() })
+    const selAddr = addresses.find(a => a.addressId === selectedAddressId)
+    const result = await addOrder({
+      trackingNumber: tracking.trim(),
+      description: description.trim(),
+      deliveryProvince: selAddr?.province,
+      deliveryCanton:   selAddr?.canton,
+      deliveryDistrict: selAddr?.district,
+      deliverySenas:    selAddr?.senas,
+    })
     setSubmitting(false)
     if ('error' in result) { setFormError(result.error); return }
     setOrders((prev) => [result.order, ...prev])
@@ -231,6 +239,12 @@ export default function PedidosPage() {
                         </div>
                         {order.description && (
                           <p className="text-slate text-xs truncate">{order.description}</p>
+                        )}
+                        {order.deliveryDistrict && (
+                          <p className="text-slate/60 text-xs truncate flex items-center gap-1 mt-0.5">
+                            <MapPin size={10} className="shrink-0" />
+                            {order.deliveryDistrict}, {order.deliveryCanton}, {order.deliveryProvince}
+                          </p>
                         )}
                         <div className="flex items-center gap-3 flex-wrap mt-1">
                           <p className="text-slate text-xs">

@@ -13,6 +13,10 @@ export interface NexoOrder {
   peso?: number
   totalPagado?: number
   updatedAt: string
+  deliveryProvince?: string
+  deliveryCanton?: string
+  deliveryDistrict?: string
+  deliverySenas?: string
 }
 
 export interface NexoUser {

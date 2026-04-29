@@ -24,7 +24,14 @@ export async function getMyOrders(): Promise<NexoOrder[]> {
   return res.json()
 }
 
-export async function addOrder(data: { trackingNumber: string; description: string }): Promise<{ order: NexoOrder } | { error: string }> {
+export async function addOrder(data: {
+  trackingNumber: string
+  description: string
+  deliveryProvince?: string
+  deliveryCanton?: string
+  deliveryDistrict?: string
+  deliverySenas?: string
+}): Promise<{ order: NexoOrder } | { error: string }> {
   try {
     const headers = await authHeaders()
     const res = await fetch(`${API}/orders`, {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
 import { calculateLoyalty } from '@/lib/loyalty'
-import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check } from 'lucide-react'
+import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
@@ -429,6 +429,24 @@ export default function AdminPage() {
                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-cyan/10 text-cyan border border-cyan/20 mt-1">
                                   ✦ Nexo Fiel {discount}%
                                 </span>
+                              )}
+                              {order.deliveryDistrict && (
+                                <div className="flex items-center gap-1 mt-1.5">
+                                  <MapPin size={10} className="text-slate shrink-0" />
+                                  <span className="text-slate text-[11px] truncate max-w-[160px]">
+                                    {order.deliveryDistrict}, {order.deliveryCanton}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      const full = `${order.deliveryProvince}, ${order.deliveryCanton}, ${order.deliveryDistrict}. ${order.deliverySenas}`
+                                      navigator.clipboard.writeText(full)
+                                    }}
+                                    title="Copiar dirección completa"
+                                    className="ml-0.5 p-0.5 rounded hover:bg-white/10 text-slate hover:text-cyan transition-colors shrink-0"
+                                  >
+                                    <Copy size={10} />
+                                  </button>
+                                </div>
                               )}
                             </td>
                             <td className="px-5 py-4 hidden md:table-cell">
