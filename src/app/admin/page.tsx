@@ -389,7 +389,8 @@ export default function AdminPage() {
               </div>
             ) : (
               <div className="bg-midnight border border-white/5 rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[900px]">
                   <thead>
                     <tr className="border-b border-white/5 text-slate text-xs uppercase tracking-wider">
                       <th className="text-left px-5 py-4">Cliente</th>
@@ -535,6 +536,7 @@ export default function AdminPage() {
                     })()}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </>
