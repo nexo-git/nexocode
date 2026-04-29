@@ -184,6 +184,22 @@ export default function PedidosPage() {
                           >
                             <CreditCard size={13} />
                             {label}
+                            {enabled && (
+                              <span className="flex items-center gap-0.5 ml-0.5">
+                                {/* Visa */}
+                                <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
+                                  <rect width="38" height="24" rx="3" fill="#1A1F71"/>
+                                  <text x="4" y="17" fontFamily="Arial" fontWeight="bold" fontSize="13" fill="white" letterSpacing="0">VISA</text>
+                                </svg>
+                                {/* Mastercard */}
+                                <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
+                                  <rect width="38" height="24" rx="3" fill="#252525"/>
+                                  <circle cx="15" cy="12" r="7" fill="#EB001B"/>
+                                  <circle cx="23" cy="12" r="7" fill="#F79E1B"/>
+                                  <path d="M19 6.8a7 7 0 0 1 0 10.4A7 7 0 0 1 19 6.8z" fill="#FF5F00"/>
+                                </svg>
+                              </span>
+                            )}
                           </button>
                         )
                       })()}
