@@ -131,6 +131,13 @@ export default function AdminPage() {
   }
 
   async function handleStatusChange(orderId: string, status: OrderStatus) {
+    if (status === 'bodega_cr') {
+      const order = orders.find((o) => o.orderId === orderId)
+      if (!order?.peso) {
+        alert('Ingresá el peso del pedido antes de moverlo a Bodega CR.')
+        return
+      }
+    }
     setUpdatingId(orderId)
     const ok = await updateOrderStatus(orderId, status)
     if (ok) setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status } : o))
