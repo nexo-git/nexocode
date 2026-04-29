@@ -25,16 +25,20 @@ export function calculateLoyalty(orders: NexoOrder[]): LoyaltyResult {
   for (const order of delivered) {
     cycleKg += order.peso!
 
-    if (milestoneIdx < MILESTONES.length && cycleKg >= MILESTONES[milestoneIdx].kg) {
-      discountMap.set(order.orderId, MILESTONES[milestoneIdx].pct)
+    let lastDiscount: number | null = null
+    while (milestoneIdx < MILESTONES.length && cycleKg >= MILESTONES[milestoneIdx].kg) {
+      lastDiscount = MILESTONES[milestoneIdx].pct
       milestoneIdx++
 
       // Ciclo completo — resetear
       if (milestoneIdx >= MILESTONES.length) {
         cycleKg -= 50
         milestoneIdx = 0
+        break
       }
     }
+
+    if (lastDiscount !== null) discountMap.set(order.orderId, lastDiscount)
   }
 
   return { discountMap, cycleKg, milestoneIdx }
