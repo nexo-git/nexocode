@@ -15,9 +15,9 @@ import type { NexoUser, NexoOrder } from '@/types/casillero'
 const statusLabel: Record<string, { label: string; color: string }> = {
   en_ruta:         { label: 'En Ruta',                          color: 'bg-blue-500/10 text-blue-400' },
   atascado_aduana: { label: 'En Aduana',                        color: 'bg-status-yellow/10 text-status-yellow' },
-  bodega_cr:       { label: 'En Bodega CR · Pendiente de Pago', color: 'bg-orange-500/10 text-orange-400' },
-  pendiente_pago:  { label: 'En Bodega CR · Pendiente de Pago', color: 'bg-orange-500/10 text-orange-400' },
-  pagado_en_ruta:  { label: 'Pagado · En Ruta a tu Puerta',     color: 'bg-emerald-400/10 text-emerald-400' },
+  bodega_cr:       { label: 'Bodega CR · Pagar', color: 'bg-orange-500/10 text-orange-400' },
+  pendiente_pago:  { label: 'Bodega CR · Pagar', color: 'bg-orange-500/10 text-orange-400' },
+  pagado_en_ruta:  { label: 'Pago · Ruta Local',     color: 'bg-emerald-400/10 text-emerald-400' },
   entregado:       { label: 'Entregado',                        color: 'bg-status-green/10 text-status-green' },
 }
 
