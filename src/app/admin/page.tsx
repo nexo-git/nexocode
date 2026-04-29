@@ -465,7 +465,8 @@ export default function AdminPage() {
                                 defaultValue={order.peso ?? ''}
                                 placeholder="—"
                                 onBlur={(e) => handlePesoBlur(order.orderId, e.target.value)}
-                                className="w-20 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate"
+                                disabled={(order.status === 'pagado_en_ruta' || order.status === 'entregado') && editingId !== order.orderId}
+                                className="w-20 bg-space-black border border-white/10 rounded-lg px-2 py-1.5 text-ghost text-xs focus:outline-none focus:border-cyan/60 placeholder-slate disabled:opacity-40 disabled:cursor-not-allowed"
                               />
                             </td>
                             <td className="px-5 py-4 hidden xl:table-cell">
@@ -487,7 +488,7 @@ export default function AdminPage() {
                             <td className="px-5 py-4">
                               <select
                                 value={order.status}
-                                disabled={updatingId === order.orderId}
+                                disabled={updatingId === order.orderId || (order.status === 'entregado' && editingId !== order.orderId)}
                                 onChange={(e) => handleStatusChange(order.orderId, e.target.value as OrderStatus)}
                                 className={`text-xs px-2 py-1.5 rounded-lg border border-white/10 bg-space-black focus:outline-none focus:border-cyan/60 cursor-pointer disabled:opacity-50 ${statusStyle[order.status]}`}
                               >

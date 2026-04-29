@@ -20,8 +20,9 @@ function milestoneBottom(kg: number) {
 
 export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
   const { cycleKg, milestoneIdx } = calculateLoyalty(orders)
+  const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
   const totalHistoricalKg = orders
-    .filter(o => o.status === 'entregado' && o.peso != null)
+    .filter(o => BILLABLE.includes(o.status) && o.peso != null)
     .reduce((sum, o) => sum + o.peso!, 0)
   const next          = MILESTONES[milestoneIdx]
   const activeDiscount = milestoneIdx > 0 ? MILESTONES[milestoneIdx - 1].pct : null

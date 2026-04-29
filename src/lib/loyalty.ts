@@ -15,8 +15,9 @@ export interface LoyaltyResult {
 export function calculateLoyalty(orders: NexoOrder[]): LoyaltyResult {
   const discountMap = new Map<string, number>()
 
+  const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
   const delivered = orders
-    .filter((o) => o.status === 'entregado' && o.peso != null)
+    .filter((o) => BILLABLE.includes(o.status) && o.peso != null)
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
 
   let cycleKg = 0
