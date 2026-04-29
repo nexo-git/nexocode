@@ -89,6 +89,168 @@ export class NexoStack extends cdk.Stack {
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
     })
 
+    // ─── DynamoDB — Direcciones ──────────────────────────────────────
+    const addressesTable = new dynamodb.Table(this, 'NexoAddressesTable', {
+      tableName: 'nexo-addresses',
+      partitionKey: { name: 'addressId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    })
+
+    addressesTable.addGlobalSecondaryIndex({
+      indexName: 'userId-index',
+      partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+    })
+
+    // ─── Lambda — Direcciones ────────────────────────────────────────
+    const addressesLambda = new lambda.Function(this, 'NexoAddressesLambda', {
+      functionName: 'nexo-addresses-api',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline(`
+        const { DynamoDBClient, PutItemCommand, QueryCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb')
+        const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
+        const { randomUUID } = require('crypto')
+
+        const dynamo = new DynamoDBClient({})
+        const TABLE_NAME = process.env.TABLE_NAME
+
+        exports.handler = async (event) => {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Authorization,Content-Type'
+          }
+          const method = event.httpMethod
+          const claims = event.requestContext?.authorizer?.claims || {}
+          const userId = claims.sub
+          const addressId = event.pathParameters?.addressId
+
+          try {
+            // GET /addresses
+            if (method === 'GET') {
+              const result = await dynamo.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                ExpressionAttributeValues: marshall({ ':uid': userId }),
+              }))
+              const items = (result.Items || []).map(i => unmarshall(i))
+              items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              return { statusCode: 200, headers, body: JSON.stringify(items) }
+            }
+
+            // POST /addresses
+            if (method === 'POST' && !addressId) {
+              // Max 2 check
+              const existing = await dynamo.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                ExpressionAttributeValues: marshall({ ':uid': userId }),
+              }))
+              if ((existing.Count || 0) >= 2) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Máximo 2 direcciones permitidas.' }) }
+              }
+              const body = JSON.parse(event.body || '{}')
+              if (!body.province || !body.canton || !body.district || !body.senas) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Todos los campos son requeridos.' }) }
+              }
+              const isFirst = (existing.Count || 0) === 0
+              const item = {
+                addressId: randomUUID(),
+                userId,
+                province: body.province,
+                canton: body.canton,
+                district: body.district,
+                senas: body.senas.trim(),
+                isDefault: isFirst,
+                createdAt: new Date().toISOString(),
+              }
+              await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall(item) }))
+              return { statusCode: 201, headers, body: JSON.stringify(item) }
+            }
+
+            // PUT /addresses/{addressId}
+            if (method === 'PUT' && addressId) {
+              const body = JSON.parse(event.body || '{}')
+              // If setting as default, clear default on others first
+              if (body.isDefault === true) {
+                const all = await dynamo.send(new QueryCommand({
+                  TableName: TABLE_NAME,
+                  IndexName: 'userId-index',
+                  KeyConditionExpression: 'userId = :uid',
+                  ExpressionAttributeValues: marshall({ ':uid': userId }),
+                }))
+                for (const raw of (all.Items || [])) {
+                  const addr = unmarshall(raw)
+                  if (addr.addressId !== addressId && addr.isDefault) {
+                    await dynamo.send(new UpdateItemCommand({
+                      TableName: TABLE_NAME,
+                      Key: marshall({ addressId: addr.addressId }),
+                      UpdateExpression: 'SET isDefault = :f',
+                      ExpressionAttributeValues: marshall({ ':f': false }),
+                    }))
+                  }
+                }
+              }
+              const exprParts = []
+              const exprValues = {}
+              if (body.province !== undefined) { exprParts.push('province = :pv'); exprValues[':pv'] = body.province }
+              if (body.canton !== undefined) { exprParts.push('canton = :ca'); exprValues[':ca'] = body.canton }
+              if (body.district !== undefined) { exprParts.push('district = :di'); exprValues[':di'] = body.district }
+              if (body.senas !== undefined) { exprParts.push('senas = :se'); exprValues[':se'] = body.senas }
+              if (body.isDefault !== undefined) { exprParts.push('isDefault = :id'); exprValues[':id'] = body.isDefault }
+              if (exprParts.length === 0) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Sin cambios.' }) }
+              await dynamo.send(new UpdateItemCommand({
+                TableName: TABLE_NAME,
+                Key: marshall({ addressId }),
+                UpdateExpression: 'SET ' + exprParts.join(', '),
+                ExpressionAttributeValues: marshall(exprValues),
+              }))
+              return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
+            }
+
+            // DELETE /addresses/{addressId}
+            if (method === 'DELETE' && addressId) {
+              const all = await dynamo.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                ExpressionAttributeValues: marshall({ ':uid': userId }),
+              }))
+              if ((all.Count || 0) <= 1) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Debe mantener al menos una dirección.' }) }
+              }
+              const target = (all.Items || []).map(i => unmarshall(i)).find(a => a.addressId === addressId)
+              await dynamo.send(new DeleteItemCommand({ TableName: TABLE_NAME, Key: marshall({ addressId }) }))
+              // If deleted was default, set first remaining as default
+              if (target?.isDefault) {
+                const remaining = (all.Items || []).map(i => unmarshall(i)).find(a => a.addressId !== addressId)
+                if (remaining) {
+                  await dynamo.send(new UpdateItemCommand({
+                    TableName: TABLE_NAME,
+                    Key: marshall({ addressId: remaining.addressId }),
+                    UpdateExpression: 'SET isDefault = :t',
+                    ExpressionAttributeValues: marshall({ ':t': true }),
+                  }))
+                }
+              }
+              return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
+            }
+
+            return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) }
+          } catch (err) {
+            return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) }
+          }
+        }
+      `),
+      environment: { TABLE_NAME: addressesTable.tableName },
+      timeout: cdk.Duration.seconds(15),
+    })
+
+    addressesTable.grantReadWriteData(addressesLambda)
+
     // ─── Lambda — Admin CRUD usuarios ───────────────────────────────
     const adminLambda = new lambda.Function(this, 'NexoAdminLambda', {
       functionName: 'nexo-admin-users',
@@ -338,6 +500,15 @@ export class NexoStack extends cdk.Stack {
     adminOrdersResource.addMethod('POST', ordersIntegration, authOptions)
     adminOrderResource.addMethod('PUT', ordersIntegration, authOptions)
     adminOrderResource.addMethod('DELETE', ordersIntegration, authOptions)
+
+    // Rutas /addresses (usuario autenticado)
+    const addressesIntegration = new apigateway.LambdaIntegration(addressesLambda)
+    const addressesResource = api.root.addResource('addresses')
+    const addressResource = addressesResource.addResource('{addressId}')
+    addressesResource.addMethod('GET', addressesIntegration, authOptions)
+    addressesResource.addMethod('POST', addressesIntegration, authOptions)
+    addressResource.addMethod('PUT', addressesIntegration, authOptions)
+    addressResource.addMethod('DELETE', addressesIntegration, authOptions)
 
     // ─── Budget Alert ────────────────────────────────────────────────
     new budgets.CfnBudget(this, 'NexoBudget', {

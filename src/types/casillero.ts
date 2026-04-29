@@ -26,6 +26,17 @@ export interface NexoUser {
   createdAt: string
 }
 
+export interface NexoAddress {
+  addressId: string
+  userId: string
+  province: string
+  canton: string
+  district: string
+  senas: string
+  isDefault: boolean
+  createdAt: string
+}
+
 export interface RegisterData {
   tipo: UserTipo
   nombre: string

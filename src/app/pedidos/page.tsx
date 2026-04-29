@@ -2,23 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, ArrowRight, Plus, X, CreditCard } from 'lucide-react'
+import { Package, ArrowRight, Plus, X, CreditCard, MapPin } from 'lucide-react'
 import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
+import { getMyAddresses } from '@/lib/addresses'
 
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import LoyaltyBar from '@/components/pedidos/LoyaltyBar'
 import { calculateLoyalty } from '@/lib/loyalty'
-import type { NexoUser, NexoOrder } from '@/types/casillero'
+import type { NexoUser, NexoOrder, NexoAddress } from '@/types/casillero'
 
 const statusLabel: Record<string, { label: string; color: string }> = {
-  en_ruta:         { label: 'En Ruta',                          color: 'bg-blue-500/10 text-blue-400' },
-  atascado_aduana: { label: 'En Aduana',                        color: 'bg-status-yellow/10 text-status-yellow' },
-  bodega_cr:       { label: 'Bodega CR · Pagar', color: 'bg-orange-500/10 text-orange-400' },
-  pendiente_pago:  { label: 'Bodega CR · Pagar', color: 'bg-orange-500/10 text-orange-400' },
-  pagado_en_ruta:  { label: 'Pago · Ruta Local',     color: 'bg-emerald-400/10 text-emerald-400' },
-  entregado:       { label: 'Entregado',                        color: 'bg-status-green/10 text-status-green' },
+  en_ruta:         { label: 'En Ruta',             color: 'bg-blue-500/10 text-blue-400' },
+  atascado_aduana: { label: 'En Aduana',            color: 'bg-status-yellow/10 text-status-yellow' },
+  bodega_cr:       { label: 'Bodega CR · Pagar',    color: 'bg-orange-500/10 text-orange-400' },
+  pendiente_pago:  { label: 'Bodega CR · Pagar',    color: 'bg-orange-500/10 text-orange-400' },
+  pagado_en_ruta:  { label: 'Pago · Ruta Local',    color: 'bg-emerald-400/10 text-emerald-400' },
+  entregado:       { label: 'Entregado',             color: 'bg-status-green/10 text-status-green' },
 }
 
 function payButtonProps(status: string): { label: string; enabled: boolean } {
@@ -31,12 +32,15 @@ function payButtonProps(status: string): { label: string; enabled: boolean } {
 
 export default function PedidosPage() {
   const router = useRouter()
-  const [user, setUser]         = useState<NexoUser | null>(null)
-  const [orders, setOrders]     = useState<NexoOrder[]>([])
-  const [ready, setReady]       = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [tracking, setTracking] = useState('')
+  const [user, setUser]               = useState<NexoUser | null>(null)
+  const [orders, setOrders]           = useState<NexoOrder[]>([])
+  const [addresses, setAddresses]     = useState<NexoAddress[]>([])
+  const [ready, setReady]             = useState(false)
+  const [showForm, setShowForm]       = useState(false)
+  const [showNoAddrModal, setShowNoAddrModal] = useState(false)
+  const [tracking, setTracking]       = useState('')
   const [description, setDescription] = useState('')
+  const [selectedAddressId, setSelectedAddressId] = useState('')
   const [submitting, setSubmitting]   = useState(false)
   const [formError, setFormError]     = useState('')
 
@@ -44,11 +48,26 @@ export default function PedidosPage() {
     getCurrentUser().then((current) => {
       if (!current) { router.replace('/login'); return }
       setUser(current)
-      getMyOrders().then((data) => { setOrders(data); setReady(true) })
+      Promise.all([getMyOrders(), getMyAddresses()]).then(([ordersData, addrsData]) => {
+        setOrders(ordersData)
+        setAddresses(addrsData)
+        const def = addrsData.find(a => a.isDefault)
+        if (def) setSelectedAddressId(def.addressId)
+        setReady(true)
+      })
     })
   }, [router])
 
   if (!ready) return null
+
+  function handleOpenForm() {
+    if (addresses.length === 0) {
+      setShowNoAddrModal(true)
+      return
+    }
+    setShowForm(v => !v)
+    setFormError('')
+  }
 
   async function handleAddOrder(e: React.FormEvent) {
     e.preventDefault()
@@ -70,20 +89,50 @@ export default function PedidosPage() {
   )
 
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
+  const defaultAddr = addresses.find(a => a.isDefault)
 
   return (
     <div className="min-h-screen bg-space-black pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
+
+        {/* Modal: sin dirección */}
+        {showNoAddrModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNoAddrModal(false)} />
+            <div className="relative bg-midnight border border-white/10 rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center">
+              <div className="w-14 h-14 rounded-2xl bg-cyan/10 flex items-center justify-center mx-auto mb-4">
+                <MapPin size={24} className="text-cyan" />
+              </div>
+              <h3 className="text-ghost font-bold text-lg mb-2">Falta tu dirección de entrega</h3>
+              <p className="text-slate text-sm mb-6">
+                Antes de agregar un pedido, registrá tu dirección en Costa Rica para que podamos coordinar la entrega.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link href="/direccion" onClick={() => setShowNoAddrModal(false)}>
+                  <Button size="md" className="w-full" icon={<MapPin size={15} />}>
+                    Agregar dirección
+                  </Button>
+                </Link>
+                <button
+                  onClick={() => setShowNoAddrModal(false)}
+                  className="text-slate text-sm hover:text-ghost transition-colors py-1"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-start justify-between mb-10">
           <div>
             <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Historial</p>
             <h1 className="text-4xl font-bold text-ghost mb-2">Tus pedidos</h1>
-            <p className="text-slate">Hola <span className="text-ghost font-medium">{user?.nombre}</span>, acá aparecen todos tus envíos con Nexo.</p>
+            <p className="text-slate">Hola <span className="text-ghost font-medium">{user?.nombre}</span>, acá gestionás todos tus envíos con Nexo.</p>
           </div>
           <button
-            onClick={() => { setShowForm((v) => !v); setFormError('') }}
+            onClick={handleOpenForm}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan text-space-black font-semibold text-sm hover:bg-cyan/90 transition-colors mt-1 shrink-0"
           >
             {showForm ? <X size={16} /> : <Plus size={16} />}
@@ -113,6 +162,42 @@ export default function PedidosPage() {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+
+            {/* Selector de dirección */}
+            {addresses.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-ghost/80 mb-2 block">Dirección de entrega</label>
+                <div className="space-y-2">
+                  {addresses.map(addr => (
+                    <label
+                      key={addr.addressId}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        selectedAddressId === addr.addressId
+                          ? 'border-cyan/40 bg-cyan/5'
+                          : 'border-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="address"
+                        value={addr.addressId}
+                        checked={selectedAddressId === addr.addressId}
+                        onChange={() => setSelectedAddressId(addr.addressId)}
+                        className="mt-0.5 accent-cyan"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-ghost text-sm font-medium">{addr.district}, {addr.canton}, {addr.province}</p>
+                        <p className="text-slate text-xs truncate">{addr.senas}</p>
+                      </div>
+                      {addr.isDefault && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20 shrink-0">Predeterminada</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {formError && (
               <p className="text-sm text-status-red bg-status-red/10 border border-status-red/20 rounded-xl px-4 py-3">{formError}</p>
             )}
@@ -169,7 +254,7 @@ export default function PedidosPage() {
                         </div>
                       </div>
 
-                      {/* Botón pago — siempre visible, habilitado solo en bodega_cr */}
+                      {/* Botón pago */}
                       {(() => {
                         const { label, enabled } = payButtonProps(order.status)
                         return (
@@ -186,12 +271,10 @@ export default function PedidosPage() {
                             {label}
                             {enabled && (
                               <span className="flex items-center gap-0.5 ml-0.5">
-                                {/* Visa */}
                                 <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
                                   <rect width="38" height="24" rx="3" fill="#1A1F71"/>
                                   <text x="4" y="17" fontFamily="Arial" fontWeight="bold" fontSize="13" fill="white" letterSpacing="0">VISA</text>
                                 </svg>
-                                {/* Mastercard */}
                                 <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
                                   <rect width="38" height="24" rx="3" fill="#252525"/>
                                   <circle cx="15" cy="12" r="7" fill="#EB001B"/>
@@ -208,7 +291,6 @@ export default function PedidosPage() {
                 })}
               </div>
             ) : (
-              /* Empty state */
               <div className="border border-dashed border-white/10 rounded-2xl p-14 flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-5">
                   <Package size={28} className="text-slate" />

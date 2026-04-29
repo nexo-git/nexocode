@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User, Settings, Sun, Moon } from 'lucide-react'
+import { Menu, X, ArrowRight, LogIn, Package2, LogOut, User, Settings, Sun, Moon, MapPin } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -125,6 +125,13 @@ export default function Navbar() {
                       <Package2 size={15} /> Mi casillero
                     </Link>
                     <Link
+                      href="/direccion"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate hover:text-ghost hover:bg-white/5 transition-colors"
+                    >
+                      <MapPin size={15} /> Dirección CR
+                    </Link>
+                    <Link
                       href="/cuenta"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate hover:text-ghost hover:bg-white/5 transition-colors"
@@ -212,6 +219,11 @@ export default function Navbar() {
                 <Link href="/casillero" className="mt-2">
                   <Button variant="secondary" size="md" className="w-full" icon={<Package2 size={14} />}>
                     Mi casillero
+                  </Button>
+                </Link>
+                <Link href="/direccion" className="mt-1">
+                  <Button variant="ghost" size="md" className="w-full text-slate" icon={<MapPin size={14} />}>
+                    Dirección CR
                   </Button>
                 </Link>
                 <Link href="/cuenta" className="mt-1">
