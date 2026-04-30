@@ -1,11 +1,10 @@
-import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoAddress } from '@/types/casillero'
+import { getAuthToken } from '@/lib/auth'
 
 const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''
 
 async function authHeaders(): Promise<HeadersInit> {
-  const session = await fetchAuthSession()
-  const token = session.tokens?.idToken?.toString() ?? ''
+  const token = await getAuthToken()
   return { Authorization: token, 'Content-Type': 'application/json' }
 }
 

@@ -1,5 +1,5 @@
-import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
+import { getAuthToken } from '@/lib/auth'
 
 export interface OrderUpdate {
   status?: OrderStatus
@@ -12,8 +12,7 @@ export interface OrderUpdate {
 const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''
 
 async function authHeaders(): Promise<HeadersInit> {
-  const session = await fetchAuthSession()
-  const token = session.tokens?.idToken?.toString() ?? ''
+  const token = await getAuthToken()
   return { 'Authorization': token, 'Content-Type': 'application/json' }
 }
 
