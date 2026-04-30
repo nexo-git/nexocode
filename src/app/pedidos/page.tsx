@@ -57,6 +57,12 @@ export default function PedidosPage() {
       })
   }, [router])
 
+  const { discountMap } = useMemo(() => calculateLoyalty(orders), [orders])
+  const sortedOrders = useMemo(() =>
+    [...orders].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+    [orders]
+  )
+
   if (!ready) return (
     <div className="min-h-screen bg-space-black pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
@@ -102,12 +108,6 @@ export default function PedidosPage() {
     setDescription('')
     setShowForm(false)
   }
-
-  const { discountMap } = useMemo(() => calculateLoyalty(orders), [orders])
-  const sortedOrders = useMemo(() =>
-    [...orders].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-    [orders]
-  )
 
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
 
