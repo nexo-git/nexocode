@@ -97,7 +97,6 @@ export default function PedidosPage() {
   )
 
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
-  const defaultAddr = addresses.find(a => a.isDefault)
 
   return (
     <div className="min-h-screen bg-space-black pt-24 pb-20">

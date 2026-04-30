@@ -223,6 +223,7 @@ nexocode/
 │   │   ├── login/page.tsx         # Inicio de sesion
 │   │   ├── cuenta/page.tsx        # Perfil del usuario autenticado
 │   │   ├── pedidos/page.tsx       # Historial de pedidos (protegida)
+│   │   ├── direccion/page.tsx     # CRUD de direcciones CR (protegida)
 │   │   ├── cotizar/page.tsx       # Calculadora de envios
 │   │   ├── asistente/page.tsx     # Asistente de compras IA
 │   │   ├── nosotros/page.tsx      # Pagina institucional
@@ -235,19 +236,23 @@ nexocode/
 │   │   ├── ui/                    # Button, Card, Select, Badge, Input
 │   │   ├── casillero/             # CasilleroForm, LoginForm, AddressCard
 │   │   ├── layout/                # Navbar (con dropdown), Footer
+│   │   ├── pedidos/               # LoyaltyBar (barra Nexo Fiel)
 │   │   ├── cotizar/               # QuoteForm, QuoteResult
 │   │   ├── tracking/              # StatusBadge, TrackingCard, TrackingTimeline
 │   │   └── sections/              # Secciones de la landing
 │   ├── lib/
 │   │   ├── casillero.ts           # Auth: registro, login, verificacion, perfil
-│   │   ├── orders.ts              # Pedidos: crear, listar, actualizar
+│   │   ├── orders.ts              # Pedidos: crear, listar, actualizar, eliminar
+│   │   ├── addresses.ts           # Direcciones CR: CRUD
+│   │   ├── loyalty.ts             # Logica Nexo Fiel (descuentos y barra visual)
+│   │   ├── cr-geo.ts              # Geodata estatico: 7 provincias, cantones, distritos
 │   │   ├── amplify-config.ts      # Configuracion Amplify SDK
 │   │   ├── constants.ts           # Constantes globales
 │   │   ├── pricing.ts             # Logica de cotizacion
 │   │   ├── tracking.ts            # Integracion de rastreo
 │   │   └── utils.ts               # Utilidades (cn, etc.)
 │   └── types/
-│       ├── casillero.ts           # NexoUser, NexoOrder, OrderStatus
+│       ├── casillero.ts           # NexoUser, NexoOrder, NexoAddress, OrderStatus
 │       ├── quote.ts               # Tipos de cotizacion
 │       └── tracking.ts            # Tipos de rastreo
 ├── public/                        # Assets estaticos
@@ -276,6 +281,7 @@ nexocode/
 \texttt{/casillero} & Público / Auth & Dirección USA si hay sesión activa \\
 \texttt{/login} & Público & Formulario de inicio de sesión \\
 \texttt{/pedidos} & Protegida & Historial y gestión de pedidos del usuario \\
+\texttt{/direccion} & Protegida & CRUD de direcciones de entrega en Costa Rica \\
 \texttt{/cuenta} & Protegida & Editar perfil y eliminar cuenta \\
 \texttt{/admin} & Protegida (admin) & Dashboard: tabs Usuarios y Pedidos \\
 \texttt{/admin/[id]} & Protegida (admin) & Editar o eliminar un usuario \\
@@ -376,20 +382,43 @@ interface NexoUser {
 }
 
 // Pedido de envio
-type OrderStatus = "en_ruta" | "atascado" | "entregado"
+type OrderStatus =
+  | "en_ruta"
+  | "atascado_aduana"
+  | "bodega_cr"
+  | "pendiente_pago"
+  | "pagado_en_ruta"
+  | "entregado"
 
 interface NexoOrder {
-  orderId:       string        // UUID
-  userId:        string        // sub de Cognito del dueno
-  userName:      string
-  userEmail:     string
-  trackingNumber: string
-  description:   string
-  startDate:     string        // ISO 8601
-  status:        OrderStatus
-  peso?:         number        // libras, lo carga el admin
-  totalPagado?:  number        // USD, lo carga el admin
-  updatedAt:     string
+  orderId:          string        // UUID
+  userId:           string        // sub de Cognito del dueno
+  userName:         string
+  userEmail:        string
+  trackingNumber:   string
+  description:      string
+  startDate:        string        // ISO 8601
+  status:           OrderStatus
+  peso?:            number        // kg, lo carga el admin
+  totalPagado?:     number        // USD, lo carga el admin
+  updatedAt:        string
+  // Direccion de entrega (denormalizada al crear el pedido)
+  deliveryProvince?: string
+  deliveryCanton?:   string
+  deliveryDistrict?: string
+  deliverySenas?:    string
+}
+
+// Direccion de entrega CR
+interface NexoAddress {
+  addressId:  string             // UUID
+  userId:     string             // sub de Cognito del dueno
+  province:   string
+  canton:     string
+  district:   string
+  senas:      string             // senas exactas
+  isDefault:  boolean
+  createdAt:  string             // ISO 8601
 }
 \end{lstlisting}
 
@@ -407,8 +436,10 @@ El admin ve todos los pedidos, actualiza el estado y carga el peso y total cobra
     POST /orders  -->  API Gateway  -->  Lambda nexo-orders-api  -->  DynamoDB nexo-orders
 
   Admin (/admin tab Pedidos)
-    GET /admin/orders          -->  API Gateway  -->  Lambda  -->  DynamoDB (Scan)
-    PUT /admin/orders/{id}     -->  API Gateway  -->  Lambda  -->  DynamoDB (Update)
+    GET    /admin/orders          -->  API Gateway  -->  Lambda  -->  DynamoDB (Scan)
+    POST   /admin/orders          -->  API Gateway  -->  Lambda  -->  DynamoDB (crea pedido para cliente)
+    PUT    /admin/orders/{id}     -->  API Gateway  -->  Lambda  -->  DynamoDB (Update)
+    DELETE /admin/orders/{id}     -->  API Gateway  -->  Lambda  -->  DynamoDB (Delete)
 
   Todos los requests llevan: Authorization: <JWT token de Cognito>
   API Gateway valida el token con el Cognito Authorizer antes de invocar el Lambda.
@@ -423,10 +454,12 @@ El admin ve todos los pedidos, actualiza el estado y carga el peso y total cobra
 \textbf{Función} & \textbf{Descripción} \\
 \midrule
 \texttt{getMyOrders()} & GET \texttt{/orders} --- pedidos del usuario autenticado \\
-\texttt{addOrder(data)} & POST \texttt{/orders} --- crea un nuevo pedido \\
+\texttt{addOrder(data)} & POST \texttt{/orders} --- crea pedido con tracking, descripción y dirección \\
 \texttt{getAllOrders()} & GET \texttt{/admin/orders} --- todos los pedidos (solo admin) \\
+\texttt{createOrderAdmin(data)} & POST \texttt{/admin/orders} --- crea pedido para cualquier cliente (admin) \\
 \texttt{updateOrderStatus(orderId, status)} & Atajo para actualizar solo el estado \\
 \texttt{updateOrder(orderId, data)} & PUT \texttt{/admin/orders/\{id\}} --- actualiza status, peso o totalPagado \\
+\texttt{deleteOrder(orderId)} & DELETE \texttt{/admin/orders/\{id\}} --- elimina un pedido (solo admin) \\
 \bottomrule
 \end{tabular}
 \caption{API de pedidos --- src/lib/orders.ts}
@@ -441,19 +474,27 @@ El API Gateway valida el token con el Cognito Authorizer antes de invocar el Lam
 \subsection{Página del cliente --- /pedidos}
 
 \begin{itemize}
-  \item Lista de pedidos con badge de estado (En ruta / Atascado / Entregado)
-  \item Muestra peso en libras y total pagado en USD si el admin los cargó
-  \item Botón ``Agregar pedido'' abre formulario inline: tracking number (requerido) y descripción (opcional)
-  \item Estado vacío con CTAs a \texttt{/cotizar} y WhatsApp
+  \item Lista de pedidos con badge de estado (6 estados posibles) y barra lateral Nexo Fiel
+  \item Muestra peso en kg y total pagado en USD si el admin los cargó; si aplica descuento Nexo Fiel se muestra el precio tachado y el precio con descuento
+  \item Botón ``Agregar pedido'': si el usuario no tiene ninguna dirección registrada, muestra un modal bloqueante con CTA a \texttt{/direccion}
+  \item Si hay al menos una dirección, abre formulario inline con: tracking number (requerido), descripción (opcional) y selector de dirección de entrega
+  \item La dirección seleccionada se guarda denormalizada en el pedido
+  \item Cada pedido muestra la dirección de entrega de forma sutil (distrito, cantón, provincia)
+  \item Botón de pago con logos de Visa y Mastercard, habilitado desde el estado \texttt{bodega\_cr}
+  \item Estado vacío con CTAs a \texttt{/casillero} y rastreo externo
 \end{itemize}
 
 \subsection{Panel admin --- /admin tab Pedidos}
 
 \begin{itemize}
   \item Tabla con todos los pedidos de todos los clientes
-  \item Columnas: Cliente, Email, Tracking, Descripción, Fecha, Peso (lb), Total (\$), Estado
-  \item Estado editable con \texttt{<select>} inline, guarda al cambiar
-  \item Peso y Total: \texttt{<input type="number">} que guardan al perder foco (\textit{auto-save on blur})
+  \item Columnas: Cliente (con dirección y botón de copiar), Tracking, Descripción, Fecha, Peso (kg), Total con descuento Nexo Fiel, Estado
+  \item Estado editable con \texttt{<select>} inline; bloqueado si el pedido está en \texttt{entregado}
+  \item Validación: no se puede cambiar a \texttt{bodega\_cr} si el campo peso está vacío
+  \item Peso: campo numérico auto-save on blur; bloqueado si el estado es \texttt{pagado\_en\_ruta} o \texttt{entregado}
+  \item Total (\$): campo numérico auto-save on blur
+  \item Admin puede crear pedidos para cualquier usuario (modal con selector de cliente)
+  \item Admin puede eliminar pedidos con confirmación
 \end{itemize}
 
 % ==========================================================
@@ -489,6 +530,19 @@ Pedidos & Todos los pedidos del sistema & \texttt{GET /admin/orders} \\
 \caption{Tabs del panel de administración}
 \end{table}
 
+\subsection{Validaciones de negocio en pedidos}
+
+\begin{description}
+  \item[\textbf{Cambio a bodega\_cr}] Bloqueado si el campo \texttt{peso} está vacío.
+    El admin debe registrar el peso antes de mover el pedido a este estado.
+  \item[\textbf{Campo peso}] Deshabilitado cuando el estado es \texttt{pagado\_en\_ruta}
+    o \texttt{entregado}, a menos que el admin esté en modo edición explícito.
+  \item[\textbf{Selector de estado}] Deshabilitado cuando el pedido ya está en
+    \texttt{entregado}, a menos que el admin esté en modo edición explícito.
+  \item[\textbf{Descuento Nexo Fiel}] La columna Total muestra el precio original tachado
+    y el precio con descuento cuando el pedido tiene un descuento asignado por el sistema de lealtad.
+\end{description}
+
 % ==========================================================
 \section{Navbar y Menú de Usuario}
 
@@ -498,6 +552,8 @@ El \texttt{Navbar} detecta la sesión en cada cambio de ruta (\texttt{useEffect}
 
 \begin{itemize}
   \item \textbf{Mi casillero} → \texttt{/casillero}
+  \item \textbf{Mis pedidos} → \texttt{/pedidos}
+  \item \textbf{Dirección CR} → \texttt{/direccion}
   \item \textbf{Cuenta} → \texttt{/cuenta}
   \item \textbf{Cerrar sesión} → llama a \texttt{logoutUser()} y redirige a \texttt{/}
 \end{itemize}
@@ -518,6 +574,157 @@ Permite al usuario autenticado gestionar su perfil:
   \item \textbf{Eliminar cuenta:} doble confirmación. Llama a \texttt{deleteCurrentUser()}
     que ejecuta \texttt{deleteUser()} de Amplify, eliminando la cuenta de Cognito.
     Los pedidos en DynamoDB se \textbf{conservan} como registro interno.
+\end{itemize}
+
+% ==========================================================
+\section{Sistema de Lealtad --- Nexo Fiel}
+
+\subsection{Descripción general}
+
+Nexo Fiel es un programa de descuentos por volumen acumulado de envíos. El sistema
+calcula automáticamente el descuento que corresponde a cada pedido según el peso
+acumulado en el ciclo de lealtad activo.
+
+\subsection{Hitos y descuentos}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Nivel} & \textbf{Kg acumulados} & \textbf{Descuento} \\
+\midrule
+BRONCE & 10 kg & 3\% \\
+PLATA  & 25 kg & 5\% \\
+ORO    & 50 kg & 7\% \\
+\bottomrule
+\end{tabular}
+\caption{Hitos del programa Nexo Fiel}
+\end{table}
+
+\subsection{Reglas del sistema}
+
+\begin{nexobox}
+\textbf{Pedidos elegibles:} Solo los pedidos con estado \texttt{bodega\_cr},
+\texttt{pendiente\_pago}, \texttt{pagado\_en\_ruta} o \texttt{entregado} y que
+tengan peso registrado cuentan para el cálculo. Los pedidos en tránsito
+(\texttt{en\_ruta}, \texttt{atascado\_aduana}) no se cuentan hasta que llegan a bodega CR.
+\end{nexobox}
+
+\begin{itemize}
+  \item Si un pedido cruza varios hitos a la vez, se aplica el descuento más alto alcanzado
+  \item El descuento aplica desde el estado \texttt{bodega\_cr} (no solo al entregar)
+  \item La barra visual solo reinicia el ciclo cuando un pedido se mueve a \texttt{entregado}
+  \item Al completar el ciclo (superar 50 kg), el contador reinicia a 0 sin carryover
+\end{itemize}
+
+\subsection{Implementación --- src/lib/loyalty.ts}
+
+La función \texttt{calculateLoyalty(orders)} usa dos loops separados sobre los pedidos
+elegibles ordenados por fecha:
+
+\begin{lstlisting}[language=bash, caption={Estructura de calculateLoyalty()}]
+// Loop 1: discountMap — a que pedido le corresponde que descuento
+let discCycleKg = 0, discMilestoneIdx = 0
+for (const order of billable) {
+  discCycleKg += order.peso
+  let lastDiscount = null
+  while (discMilestoneIdx < MILESTONES.length &&
+         discCycleKg >= MILESTONES[discMilestoneIdx].kg) {
+    lastDiscount = MILESTONES[discMilestoneIdx].pct
+    discMilestoneIdx++
+    if (discMilestoneIdx >= MILESTONES.length) {
+      discCycleKg = 0; discMilestoneIdx = 0; break
+    }
+  }
+  if (lastDiscount !== null) discountMap.set(order.orderId, lastDiscount)
+}
+
+// Loop 2: barra visual — acumula pero solo reinicia en "entregado"
+let cycleKg = 0, milestoneIdx = 0
+for (const order of billable) {
+  cycleKg += order.peso
+  if (order.status === "entregado") {
+    while (milestoneIdx < MILESTONES.length &&
+           cycleKg >= MILESTONES[milestoneIdx].kg) {
+      milestoneIdx++
+      if (milestoneIdx >= MILESTONES.length) {
+        cycleKg = 0; milestoneIdx = 0; break
+      }
+    }
+  }
+}
+return { discountMap, cycleKg, milestoneIdx }
+\end{lstlisting}
+
+\subsection{Componente LoyaltyBar --- src/components/pedidos/LoyaltyBar.tsx}
+
+\begin{itemize}
+  \item Barra de progreso vertical con los tres hitos marcados (BRONCE, PLATA, ORO)
+  \item Muestra el kg actual del ciclo y cuántos kg faltan para el próximo hito
+  \item En la esquina superior derecha: total histórico de kg enviados (todos los ciclos)
+  \item Se integra en \texttt{/pedidos} como sidebar fijo en desktop (\texttt{lg:sticky})
+  \item El panel admin muestra el descuento correspondiente en la columna Total de cada pedido
+\end{itemize}
+
+% ==========================================================
+\section{Dirección CR --- /direccion}
+
+\subsection{Descripción general}
+
+Cada cliente puede registrar hasta \textbf{2 direcciones} de entrega en Costa Rica.
+Siempre debe haber exactamente una marcada como predeterminada. La dirección se guarda
+denormalizadamente en cada pedido al momento de crearlo, por lo que cambios posteriores
+a la dirección no afectan pedidos existentes.
+
+\subsection{Geodata estático --- src/lib/cr-geo.ts}
+
+Contiene las 7 provincias de Costa Rica con todos sus cantones y distritos como datos
+estáticos en TypeScript. Los selectores de Provincia → Cantón → Distrito están
+encadenados: al cambiar la provincia se resetean cantón y distrito.
+
+\begin{lstlisting}[language=bash, caption={Estructura de cr-geo.ts}]
+interface GeoCanton  { canton: string; districts: string[] }
+interface GeoProvince { province: string; cantons: GeoCanton[] }
+export const CR_GEO: GeoProvince[]   // 7 provincias, ~82 cantones, ~474 distritos
+\end{lstlisting}
+
+\subsection{API --- src/lib/addresses.ts}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Función} & \textbf{Descripción} \\
+\midrule
+\texttt{getMyAddresses()} & GET \texttt{/addresses} --- lista las direcciones del usuario \\
+\texttt{createAddress(data)} & POST \texttt{/addresses} --- crea dirección (máx. 2) \\
+\texttt{updateAddress(id, data)} & PUT \texttt{/addresses/\{id\}} --- edita o cambia predeterminada \\
+\texttt{deleteAddress(id)} & DELETE \texttt{/addresses/\{id\}} --- elimina (solo si hay otra) \\
+\bottomrule
+\end{tabular}
+\caption{API de direcciones --- src/lib/addresses.ts}
+\end{table}
+
+\subsection{Página --- /direccion}
+
+\begin{itemize}
+  \item Muestra las direcciones registradas (máx. 2) con badge ``Predeterminada''
+  \item Formulario de creación con selectores encadenados Provincia → Cantón → Distrito + campo Señas
+  \item Edición inline con el mismo formulario encadenado
+  \item Eliminar: deshabilitado si solo hay una dirección (siempre debe quedar al menos una)
+  \item Si se elimina la predeterminada, el backend asigna automáticamente la restante como default
+  \item Accesible desde el navbar (dropdown de usuario en desktop y menú mobile)
+\end{itemize}
+
+\subsection{Integración con /pedidos}
+
+\begin{itemize}
+  \item Al hacer clic en ``Agregar pedido'' se verifica si el usuario tiene direcciones
+  \item Si no hay ninguna: modal bloqueante con CTA a \texttt{/direccion}
+  \item Si hay al menos una: formulario con radio buttons para seleccionar la dirección de entrega
+  \item La dirección por defecto queda preseleccionada
+  \item Los campos \texttt{deliveryProvince}, \texttt{deliveryCanton}, \texttt{deliveryDistrict},
+    \texttt{deliverySenas} se guardan en el pedido (denormalizados)
 \end{itemize}
 
 % ==========================================================

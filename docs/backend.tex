@@ -153,10 +153,10 @@ propios que mantener. Toda la infraestructura está definida como código con
 
 \vspace{0.5em}
 El sistema maneja autenticación de usuarios mediante \textbf{AWS Cognito}, almacena
-perfiles en \textbf{DynamoDB nexo-users} y pedidos en \textbf{DynamoDB nexo-orders},
-y expone un API protegido a través de \textbf{Lambda + API Gateway} con autorizador
-Cognito. Todo dentro del \textit{Free Tier} de AWS para el volumen esperado en la
-fase inicial.
+perfiles en \textbf{DynamoDB nexo-users}, pedidos en \textbf{DynamoDB nexo-orders}
+y direcciones de entrega en \textbf{DynamoDB nexo-addresses}, y expone un API
+protegido a través de \textbf{Lambda + API Gateway} con autorizador Cognito.
+Todo dentro del \textit{Free Tier} de AWS para el volumen esperado en la fase inicial.
 
 \subsection{Stack tecnológico}
 
@@ -169,8 +169,10 @@ fase inicial.
 Autenticación & AWS Cognito User Pool & Amazon Web Services \\
 Base de datos usuarios & AWS DynamoDB (on-demand) & Amazon Web Services \\
 Base de datos pedidos & AWS DynamoDB (on-demand) & Amazon Web Services \\
+Base de datos direcciones & AWS DynamoDB (on-demand) & Amazon Web Services \\
 Lógica admin/usuarios & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
 Lógica pedidos & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+Lógica direcciones & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
 API & AWS API Gateway REST API + Cognito Authorizer & Amazon Web Services \\
 IaC / Despliegue & AWS CDK (TypeScript) & Amazon Web Services \\
 Alertas de costo & AWS Budgets & Amazon Web Services \\
@@ -188,17 +190,17 @@ Alertas de costo & AWS Budgets & Amazon Web Services \\
        |-- signUp / signIn / confirmSignUp ---------> Cognito User Pool
        |                                              (nexo-users pool)
        |
-       |-- GET/POST /orders -----> API Gateway --> Cognito Authorizer
-       |-- GET/PUT  /admin/orders      |                 |
-       |-- GET/PUT/DELETE /admin/users |            (valida JWT)
-                                       |                 |
-                                       v                 v
-                              Lambda nexo-admin-users   Lambda nexo-orders-api
-                                       |                       |
-                              +--------+--------+    +---------+---------+
-                              |                 |    |                   |
-                           Cognito           DynamoDB               DynamoDB
-                        (admin ops)         nexo-users             nexo-orders
+       |-- GET/POST /orders ------------> API Gateway --> Cognito Authorizer
+       |-- GET/POST/PUT/DELETE /admin/orders   |               |
+       |-- GET/PUT/DELETE /admin/users         |          (valida JWT)
+       |-- GET/POST/PUT/DELETE /addresses      |               |
+                                               v               v
+                      Lambda nexo-admin-users  Lambda nexo-orders-api  Lambda nexo-addresses-api
+                               |                       |                       |
+                      +--------+--------+    +----------+----------+   +-------+-------+
+                      |                 |    |          |          |   |               |
+                   Cognito           DynamoDB        DynamoDB   DynamoDB           DynamoDB
+                (admin ops)         nexo-users      nexo-orders nexo-orders       nexo-addresses
 \end{lstlisting}
 
 \subsection*{Descripción de componentes}
@@ -213,9 +215,12 @@ Alertas de costo & AWS Budgets & Amazon Web Services \\
   \item[\textbf{Lambda nexo-admin-users}] CRUD de usuarios sobre Cognito y DynamoDB.
     Solo accesible por admins.
   \item[\textbf{Lambda nexo-orders-api}] Gestión de pedidos. Usuarios ven sus pedidos;
-    admins ven todos y actualizan estado, peso y total.
+    admins ven todos, crean, actualizan estado, peso y total, y eliminan.
+  \item[\textbf{Lambda nexo-addresses-api}] CRUD de direcciones de entrega CR. Máximo 2
+    por usuario. Gestiona automáticamente la dirección predeterminada.
   \item[\textbf{DynamoDB nexo-users}] Perfiles extendidos de usuarios.
   \item[\textbf{DynamoDB nexo-orders}] Pedidos de envío registrados por los clientes.
+  \item[\textbf{DynamoDB nexo-addresses}] Direcciones de entrega en Costa Rica.
 \end{description}
 
 % ==========================================================
@@ -381,19 +386,64 @@ GSI & \texttt{userId-index} (PK: userId) \\
 
 \begin{lstlisting}[language=bash, caption={Esquema de ítem en nexo-orders}]
 {
-  "orderId":        "string",   // UUID (PK)
-  "userId":         "string",   // sub de Cognito del dueno (GSI)
-  "userName":       "string",   // para display en admin
-  "userEmail":      "string",   // para display en admin
-  "trackingNumber": "string",
-  "description":    "string",
-  "startDate":      "string",   // ISO 8601
-  "status":         "en_ruta" | "atascado" | "entregado",
-  "peso":           number,     // libras, opcional, lo carga el admin
-  "totalPagado":    number,     // USD, opcional, lo carga el admin
-  "updatedAt":      "string"    // ISO 8601
+  "orderId":          "string",   // UUID (PK)
+  "userId":           "string",   // sub de Cognito del dueno (GSI)
+  "userName":         "string",   // para display en admin
+  "userEmail":        "string",   // para display en admin
+  "trackingNumber":   "string",
+  "description":      "string",
+  "startDate":        "string",   // ISO 8601
+  "status":           "en_ruta" | "atascado_aduana" | "bodega_cr"
+                    | "pendiente_pago" | "pagado_en_ruta" | "entregado",
+  "peso":             number,     // kg, opcional, lo carga el admin
+  "totalPagado":      number,     // USD, opcional, lo carga el admin
+  "updatedAt":        "string",   // ISO 8601
+  // Campos de entrega — denormalizados al crear el pedido:
+  "deliveryProvince": "string",   // opcional
+  "deliveryCanton":   "string",   // opcional
+  "deliveryDistrict": "string",   // opcional
+  "deliverySenas":    "string"    // opcional
 }
 \end{lstlisting}
+
+\subsection{Tabla nexo-addresses}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-addresses} \\
+Partition Key & \texttt{addressId} (String, UUID) \\
+Billing Mode & PAY\_PER\_REQUEST \\
+Removal Policy & RETAIN \\
+GSI & \texttt{userId-index} (PK: userId) \\
+\bottomrule
+\end{tabular}
+\caption{Tabla nexo-addresses}
+\end{table}
+
+\begin{lstlisting}[language=bash, caption={Esquema de ítem en nexo-addresses}]
+{
+  "addressId":  "string",    // UUID (PK)
+  "userId":     "string",    // sub de Cognito del dueno (GSI)
+  "province":   "string",    // provincia CR
+  "canton":     "string",    // canton CR
+  "district":   "string",    // distrito CR
+  "senas":      "string",    // senas exactas de entrega
+  "isDefault":  boolean,     // true si es la predeterminada
+  "createdAt":  "string"     // ISO 8601
+}
+\end{lstlisting}
+
+\begin{nexobox}
+\textbf{Reglas de negocio:} Cada usuario puede tener máximo 2 direcciones. Siempre
+debe existir exactamente una marcada como \texttt{isDefault = true}. Al eliminar la
+dirección predeterminada, el Lambda asigna automáticamente \texttt{isDefault = true}
+a la dirección restante. Al marcar una dirección como predeterminada, el Lambda
+desactiva la otra (\texttt{isDefault = false}).
+\end{nexobox}
 
 \begin{nexobox}
 \textbf{Separación de responsabilidades:} Las credenciales (contraseña hasheada,
@@ -461,14 +511,54 @@ Variables de entorno & \texttt{TABLE\_NAME} (nexo-orders) \\
 \toprule
 \textbf{Método} & \textbf{Path} & \textbf{Rol requerido} & \textbf{Descripción} \\
 \midrule
-POST & \texttt{/orders} & Cualquier usuario auth & Crea un nuevo pedido \\
-GET & \texttt{/orders} & Cualquier usuario auth & Lista pedidos propios (por userId del JWT) \\
-GET & \texttt{/admin/orders} & Grupo \texttt{admin} & Lista todos los pedidos (Scan) \\
-PUT & \texttt{/admin/orders/\{orderId\}} & Grupo \texttt{admin} & Actualiza status, peso, totalPagado \\
+POST   & \texttt{/orders} & Cualquier usuario auth & Crea pedido con tracking, descripción y dirección \\
+GET    & \texttt{/orders} & Cualquier usuario auth & Lista pedidos propios (por userId del JWT) \\
+GET    & \texttt{/admin/orders} & Grupo \texttt{admin} & Lista todos los pedidos (Scan) \\
+POST   & \texttt{/admin/orders} & Grupo \texttt{admin} & Crea pedido para cualquier cliente \\
+PUT    & \texttt{/admin/orders/\{orderId\}} & Grupo \texttt{admin} & Actualiza status, peso, totalPagado \\
+DELETE & \texttt{/admin/orders/\{orderId\}} & Grupo \texttt{admin} & Elimina un pedido \\
 \bottomrule
 \end{tabular}
 \caption{Endpoints de nexo-orders-api}
 \end{table}
+
+\subsection{Lambda nexo-addresses-api}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-addresses-api} \\
+Runtime & Node.js 20.x \\
+Handler & \texttt{index.handler} \\
+Timeout & 15 segundos \\
+Variables de entorno & \texttt{TABLE\_NAME} (nexo-addresses) \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de gestión de direcciones}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Método} & \textbf{Path} & \textbf{Rol requerido} & \textbf{Descripción} \\
+\midrule
+GET    & \texttt{/addresses} & Cualquier usuario auth & Lista direcciones propias (por userId del JWT) \\
+POST   & \texttt{/addresses} & Cualquier usuario auth & Crea dirección (máx. 2 por usuario) \\
+PUT    & \texttt{/addresses/\{addressId\}} & Cualquier usuario auth & Edita dirección o cambia predeterminada \\
+DELETE & \texttt{/addresses/\{addressId\}} & Cualquier usuario auth & Elimina dirección (solo si hay otra) \\
+\bottomrule
+\end{tabular}
+\caption{Endpoints de nexo-addresses-api}
+\end{table}
+
+\begin{nexobox}
+\textbf{Permisos IAM de nexo-addresses-api} sobre DynamoDB \texttt{nexo-addresses}:
+acceso completo de lectura/escritura (PutItem, Query via GSI, UpdateItem, DeleteItem).
+\end{nexobox}
 
 \begin{nexobox}
 \textbf{Verificación de admin en Lambda:} La función lee el claim
@@ -534,7 +624,14 @@ invocar el Lambda. El Lambda recibe los claims directamente en
 /
 ├── orders/
 │   ├── GET    --> nexo-orders-api  (pedidos del usuario autenticado)
-│   └── POST   --> nexo-orders-api  (crear pedido)
+│   └── POST   --> nexo-orders-api  (crear pedido con tracking y direccion)
+│
+├── addresses/
+│   ├── GET    --> nexo-addresses-api  (direcciones del usuario)
+│   ├── POST   --> nexo-addresses-api  (crear direccion, max 2)
+│   └── {addressId}/
+│       ├── PUT    --> nexo-addresses-api  (editar / cambiar predeterminada)
+│       └── DELETE --> nexo-addresses-api  (eliminar, solo si hay otra)
 │
 └── admin/
     ├── users/
@@ -546,8 +643,10 @@ invocar el Lambda. El Lambda recibe los claims directamente en
     │
     └── orders/
         ├── GET            --> nexo-orders-api   (todos los pedidos)
+        ├── POST           --> nexo-orders-api   (crear pedido para cliente)
         └── {orderId}/
-            └── PUT        --> nexo-orders-api   (actualizar pedido)
+            ├── PUT        --> nexo-orders-api   (actualizar status/peso/total)
+            └── DELETE     --> nexo-orders-api   (eliminar pedido)
 
 Todas las rutas requieren: Authorization: <JWT de Cognito>
 \end{lstlisting}
@@ -585,6 +684,7 @@ Stack ARN & \texttt{arn:aws:cloudformation:us-east-1:769953010359:stack/NexoStac
 \texttt{ApiUrl} & \texttt{https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod/} \\
 \texttt{UsersTableName} & \texttt{nexo-users} \\
 \texttt{OrdersTableName} & \texttt{nexo-orders} \\
+\texttt{AddressesTableName} & \texttt{nexo-addresses} \\
 \bottomrule
 \end{tabular}
 \caption{Outputs del stack CDK}
