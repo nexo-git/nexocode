@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
 import { getMyAddresses } from '@/lib/addresses'
 import { createReview } from '@/lib/reviews'
+import { createPaymentSession } from '@/lib/payments'
 
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
@@ -51,6 +52,8 @@ export default function PedidosPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewError, setReviewError]         = useState('')
   const [reviewDone, setReviewDone]           = useState(false)
+  const [payingOrderId, setPayingOrderId]     = useState<string | null>(null)
+  const [payError, setPayError]               = useState('')
 
   useEffect(() => {
     Promise.all([getCurrentUser(), getMyOrders(), getMyAddresses()])
@@ -116,6 +119,15 @@ export default function PedidosPage() {
     setTracking('')
     setDescription('')
     setShowForm(false)
+  }
+
+  async function handlePay(orderId: string) {
+    setPayingOrderId(orderId)
+    setPayError('')
+    const result = await createPaymentSession(orderId)
+    setPayingOrderId(null)
+    if ('error' in result) { setPayError(result.error); return }
+    window.location.href = result.checkoutUrl
   }
 
   async function handleSubmitReview(e: React.FormEvent) {
@@ -324,6 +336,13 @@ export default function PedidosPage() {
           </form>
         )}
 
+        {/* Error de pago */}
+        {payError && (
+          <div className="mb-4 text-sm text-status-red bg-status-red/10 border border-status-red/20 rounded-xl px-4 py-3">
+            {payError}
+          </div>
+        )}
+
         {/* Layout: tabla + sidebar */}
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
@@ -382,8 +401,8 @@ export default function PedidosPage() {
                         const { label, enabled } = payButtonProps(order.status)
                         return (
                           <button
-                            disabled={!enabled}
-                            onClick={enabled ? () => alert('Próximamente — pagos con tarjeta') : undefined}
+                            disabled={!enabled || payingOrderId === order.orderId}
+                            onClick={enabled ? () => handlePay(order.orderId) : undefined}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-colors
                               ${enabled
                                 ? 'bg-status-green/10 text-status-green border-status-green/20 hover:bg-status-green/20 cursor-pointer'
@@ -391,7 +410,7 @@ export default function PedidosPage() {
                               }`}
                           >
                             <CreditCard size={13} />
-                            {label}
+                            {payingOrderId === order.orderId ? 'Redirigiendo…' : label}
                             {enabled && (
                               <span className="flex items-center gap-0.5 ml-0.5">
                                 <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
