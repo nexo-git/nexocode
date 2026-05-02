@@ -1,16 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Star, ArrowRight } from 'lucide-react'
+import { Star, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { getReviews } from '@/lib/reviews'
 import type { NexoReview } from '@/types/casillero'
-
-const FALLBACK: NexoReview[] = [
-  { reviewId: 'f1', userId: 'seed', userName: 'Ana Rodríguez', rating: 5, comment: '¡Increíble servicio! Mi paquete llegó en 5 días y en perfectas condiciones. Definitivamente volvería a usar Nexo.', createdAt: '2025-11-15T14:23:00.000Z' },
-  { reviewId: 'f2', userId: 'seed', userName: 'Carlos Jiménez', rating: 5, comment: 'Super rápido y confiable. Ya llevo 3 pedidos con Nexo y siempre excelente. El seguimiento en tiempo real es muy útil.', createdAt: '2025-12-03T09:10:00.000Z' },
-  { reviewId: 'f3', userId: 'seed', userName: 'María González', rating: 5, comment: 'Muy buena experiencia. Precios justos y atención al cliente excelente cuando tuve una consulta.', createdAt: '2026-01-20T16:45:00.000Z' },
-]
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -27,7 +21,11 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function ReviewCard({ review }: { review: NexoReview }) {
-  const date = new Date(review.createdAt).toLocaleDateString('es-CR', { month: 'long', year: 'numeric' })
+  const date = new Date(review.createdAt).toLocaleDateString('es-CR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
   return (
     <div className="bg-midnight border border-white/5 rounded-2xl px-6 py-5 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
@@ -64,49 +62,51 @@ function SkeletonCard() {
   )
 }
 
-export default function ReviewsSection() {
+export default function ResenasPage() {
   const [reviews, setReviews] = useState<NexoReview[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getReviews().then((data) => {
-      setReviews(data.length > 0 ? data.slice(0, 3) : FALLBACK)
+      setReviews(data)
       setLoading(false)
     })
   }, [])
 
   return (
-    <section className="bg-midnight py-24 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-space-black pt-24 pb-20">
+      <div className="max-w-3xl mx-auto px-4 md:px-8">
 
-        <div className="text-center mb-14">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-slate hover:text-ghost text-sm transition-colors mb-10"
+        >
+          <ArrowLeft size={14} />
+          Volver al inicio
+        </Link>
+
+        <div className="mb-10">
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Reseñas</p>
-          <h2 className="text-4xl md:text-5xl font-black text-ghost leading-tight mb-4">
-            Lo que dicen nuestros clientes
-          </h2>
-          <p className="text-slate max-w-xl mx-auto">
-            Reseñas reales de personas que ya recibieron sus paquetes con Nexo.
+          <h1 className="text-4xl font-bold text-ghost mb-2">Lo que dicen nuestros clientes</h1>
+          <p className="text-slate">
+            {loading ? '...' : `${reviews.length} reseña${reviews.length !== 1 ? 's' : ''} de personas que recibieron sus paquetes con Nexo.`}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="space-y-4">
           {loading
-            ? [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
-            : reviews.map((r) => <ReviewCard key={r.reviewId} review={r} />)
+            ? [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
+            : reviews.length > 0
+              ? reviews.map((r) => <ReviewCard key={r.reviewId} review={r} />)
+              : (
+                <div className="text-center py-20 text-slate">
+                  Aún no hay reseñas. ¡Sé el primero en dejar una desde tu historial de pedidos.
+                </div>
+              )
           }
         </div>
 
-        <div className="text-center">
-          <Link
-            href="/resenas"
-            className="inline-flex items-center gap-2 text-sm text-slate hover:text-ghost transition-colors"
-          >
-            Ver todas las reseñas
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-
       </div>
-    </section>
+    </div>
   )
 }
