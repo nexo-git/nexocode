@@ -479,7 +479,7 @@ export class NexoStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
-        const { DynamoDBClient, PutItemCommand, ScanCommand, QueryCommand } = require('@aws-sdk/client-dynamodb')
+        const { DynamoDBClient, PutItemCommand, ScanCommand, QueryCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb')
         const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
         const { randomUUID } = require('crypto')
 
@@ -554,6 +554,22 @@ export class NexoStack extends cdk.Stack {
               }
               await dynamo.send(new PutItemCommand({ TableName: REVIEWS_TABLE, Item: marshall(item) }))
               return { statusCode: 201, headers, body: JSON.stringify(item) }
+            }
+
+            // DELETE /admin/reviews/{reviewId} — solo admin
+            if (method === 'DELETE') {
+              const claims = event.requestContext?.authorizer?.claims || {}
+              const groups = claims['cognito:groups'] || ''
+              if (!groups.includes('admin')) {
+                return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
+              }
+              const reviewId = event.pathParameters?.reviewId
+              if (!reviewId) return { statusCode: 400, headers, body: JSON.stringify({ error: 'reviewId requerido' }) }
+              await dynamo.send(new DeleteItemCommand({
+                TableName: REVIEWS_TABLE,
+                Key: marshall({ reviewId }),
+              }))
+              return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }
 
             return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) }
@@ -646,6 +662,11 @@ export class NexoStack extends cdk.Stack {
     const reviewsResource = api.root.addResource('reviews')
     reviewsResource.addMethod('GET', reviewsIntegration)
     reviewsResource.addMethod('POST', reviewsIntegration, authOptions)
+
+    // Ruta /admin/reviews/{reviewId} — DELETE admin
+    const adminReviewsResource = adminResource.addResource('reviews')
+    const adminReviewResource = adminReviewsResource.addResource('{reviewId}')
+    adminReviewResource.addMethod('DELETE', reviewsIntegration, authOptions)
 
     // Rutas /addresses (usuario autenticado)
     const addressesIntegration = new apigateway.LambdaIntegration(addressesLambda)

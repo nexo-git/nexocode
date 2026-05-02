@@ -13,6 +13,19 @@ export async function getReviews(): Promise<NexoReview[]> {
   }
 }
 
+export async function deleteReview(reviewId: string): Promise<boolean> {
+  try {
+    const token = await getAuthToken()
+    const res = await fetch(`${API}/admin/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: { Authorization: token },
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export async function createReview(data: {
   rating: number
   comment: string

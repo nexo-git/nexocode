@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/casillero'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
 import { calculateLoyalty } from '@/lib/loyalty'
-import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy } from 'lucide-react'
+import { getReviews, deleteReview } from '@/lib/reviews'
+import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star } from 'lucide-react'
+import type { NexoReview } from '@/types/casillero'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
@@ -46,7 +48,7 @@ async function authHeaders(): Promise<HeadersInit> {
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<'usuarios' | 'pedidos'>('usuarios')
+  const [tab, setTab] = useState<'usuarios' | 'pedidos' | 'resenas'>('usuarios')
 
   // ── Usuarios ──────────────────────────────────────────────────────
   const [users, setUsers]       = useState<CognitoUser[]>([])
@@ -54,6 +56,10 @@ export default function AdminPage() {
   const [search, setSearch]     = useState('')
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [usersError, setUsersError]     = useState('')
+
+  // ── Reseñas ───────────────────────────────────────────────────────
+  const [reviews, setReviews]             = useState<NexoReview[]>([])
+  const [loadingReviews, setLoadingReviews] = useState(false)
 
   // ── Pedidos ───────────────────────────────────────────────────────
   const [orders, setOrders]           = useState<NexoOrder[]>([])
@@ -84,6 +90,7 @@ export default function AdminPage() {
       if (!groups.includes('admin')) { router.replace('/casillero'); return }
       fetchUsers()
       fetchOrders()
+      fetchReviews()
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -117,6 +124,20 @@ export default function AdminPage() {
     const data = await getAllOrders()
     setOrders(data)
     setLoadingOrders(false)
+  }
+
+  async function fetchReviews() {
+    setLoadingReviews(true)
+    const data = await getReviews()
+    setReviews(data)
+    setLoadingReviews(false)
+  }
+
+  async function handleDeleteReview(reviewId: string, userName: string) {
+    if (!confirm(`¿Eliminar la reseña de ${userName}? Esta acción no se puede deshacer.`)) return
+    const ok = await deleteReview(reviewId)
+    if (ok) setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId))
+    else alert('Error al eliminar la reseña.')
   }
 
   async function handleDeleteUser(username: string, email: string) {
@@ -222,15 +243,15 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-midnight border border-white/5 rounded-xl p-1 w-fit mb-8">
-          {(['usuarios', 'pedidos'] as const).map((t) => (
+          {(['usuarios', 'pedidos', 'resenas'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === t ? 'bg-cyan text-space-black' : 'text-slate hover:text-ghost'
               }`}
             >
-              {t === 'usuarios' ? 'Usuarios' : 'Pedidos'}
+              {t === 'usuarios' ? 'Usuarios' : t === 'pedidos' ? 'Pedidos' : 'Reseñas'}
             </button>
           ))}
         </div>
@@ -566,6 +587,49 @@ export default function AdminPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── TAB: RESEÑAS ── */}
+        {tab === 'resenas' && (
+          <div>
+            {loadingReviews ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-midnight border border-white/5 rounded-2xl h-24 animate-pulse" />
+                ))}
+              </div>
+            ) : reviews.length === 0 ? (
+              <p className="text-slate text-sm">No hay reseñas todavía.</p>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map((r) => (
+                  <div key={r.reviewId} className="bg-midnight border border-white/5 rounded-2xl px-5 py-4 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap mb-1">
+                        <p className="text-ghost font-medium text-sm">{r.userName}</p>
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map((n) => (
+                            <Star key={n} size={12} className={n <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/10'} />
+                          ))}
+                        </div>
+                        <span className="text-slate text-xs">
+                          {new Date(r.createdAt).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-slate text-sm leading-relaxed truncate">{r.comment}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReview(r.reviewId, r.userName)}
+                      className="p-2 rounded-lg hover:bg-status-red/10 text-slate hover:text-status-red transition-colors shrink-0"
+                      title="Eliminar reseña"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
       </div>
