@@ -21,7 +21,17 @@ export default function AddressCard({ user }: AddressCardProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const lines = address.split('\n')
+  const nombre = address.split('\n')[0]
+
+  const fields: { label: string; value: string; cyan?: boolean }[] = [
+    { label: 'Nombre',    value: nombre,                         cyan: true },
+    { label: 'Dirección', value: 'KEBRA LOGISTICS, 784 E 14TH PL' },
+    { label: 'Ciudad',    value: 'LOS ANGELES' },
+    { label: 'Estado',    value: 'California (CA)' },
+    { label: 'ZIP',       value: '90021-2118' },
+    { label: 'País',      value: 'Estados Unidos' },
+    { label: 'Teléfono',  value: '3238750520' },
+  ]
 
   return (
     <Card variant="highlighted" className="w-full">
@@ -37,17 +47,27 @@ export default function AddressCard({ user }: AddressCardProps) {
       </div>
 
       {/* Address block */}
-      <div className="bg-space-black/60 rounded-xl px-5 py-4 mb-6 font-mono text-sm leading-relaxed">
-        {lines.map((line, i) => (
-          <p key={i} className={i === 0 ? 'text-cyan font-semibold' : 'text-ghost'}>
-            {line}
-          </p>
-        ))}
+      <div className="bg-space-black/60 rounded-xl px-5 py-4 mb-4 font-mono text-sm">
+        <table className="w-full border-separate border-spacing-y-1.5">
+          <tbody>
+            {fields.map(({ label, value, cyan }) => (
+              <tr key={label}>
+                <td className="text-slate text-xs pr-4 whitespace-nowrap align-top pt-0.5 w-24">{label}:</td>
+                <td className={cyan ? 'text-cyan font-semibold' : 'text-ghost'}>{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <p className="text-slate text-xs mb-6">
-        Usá esta dirección cuando realices compras en tiendas de USA. Nexo recibirá tu paquete y lo enviará a Costa Rica.
-      </p>
+      {/* Leyenda nombre */}
+      <div className="flex items-start gap-2 bg-cyan/5 border border-cyan/20 rounded-xl px-4 py-3 mb-6">
+        <span className="text-cyan text-sm shrink-0">⚠</span>
+        <p className="text-slate text-xs leading-relaxed">
+          El <span className="text-ghost font-semibold">nombre</span> debe ir exactamente como aparece arriba —{' '}
+          con <span className="text-cyan font-semibold">- NEXO</span> al final — para que podamos identificar tu paquete en bodega.
+        </p>
+      </div>
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3">
