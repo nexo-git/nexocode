@@ -92,9 +92,20 @@ export default function NexoFielSection() {
             <span className="text-slate-300 text-xs font-semibold">Plata · 25 kg</span>
             <span className="text-yellow-400 text-xs font-semibold">Oro · 50 kg</span>
           </div>
-          <p className="text-slate text-xs text-center mt-3">
-            Los descuentos se aplican automáticamente al pedido que alcanza el hito
-          </p>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-cyan font-semibold text-xs shrink-0">①</span>
+              <p className="text-slate text-xs">El descuento aplica <span className="text-ghost font-semibold">solo al pedido</span> que alcanza o supera el hito — no a todos tus envíos.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-cyan font-semibold text-xs shrink-0">②</span>
+              <p className="text-slate text-xs">El contador se <span className="text-ghost font-semibold">reinicia a 0 kg</span> después de llegar al Oro (50 kg) y vuelve a Bronce.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-cyan font-semibold text-xs shrink-0">③</span>
+              <p className="text-slate text-xs">Los descuentos se aplican automáticamente — no tenés que hacer nada.</p>
+            </div>
+          </div>
         </div>
 
         {/* CTA */}
