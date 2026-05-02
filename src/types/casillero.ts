@@ -52,8 +52,7 @@ export interface NexoReview {
 
 export interface RegisterData {
   tipo: UserTipo
-  nombre: string
-  apellido?: string
+  nombreCompleto: string
   movil: string
   telefono: string
   email: string

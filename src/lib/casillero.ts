@@ -15,14 +15,17 @@ import { NEXO_WAREHOUSE_ADDRESS, NEXO_WAREHOUSE_PHONE } from '@/lib/constants'
 
 export async function registerUser(data: RegisterData): Promise<{ needsConfirmation: true; email: string } | { error: string }> {
   try {
+    const parts = data.nombreCompleto.trim().split(/\s+/)
+    const givenName = parts[0]
+    const familyName = parts.slice(1).join(' ')
     await signUp({
       username: data.email.toLowerCase().trim(),
       password: data.password,
       options: {
         userAttributes: {
           email: data.email.toLowerCase().trim(),
-          given_name: data.nombre.trim(),
-          family_name: data.apellido?.trim() ?? '',
+          given_name: givenName,
+          family_name: familyName,
           'custom:tipo': data.tipo,
           'custom:movil': data.movil.trim(),
           'custom:telefono': data.telefono?.trim() ?? '',

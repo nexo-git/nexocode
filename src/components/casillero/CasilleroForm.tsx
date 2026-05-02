@@ -12,8 +12,7 @@ import Link from 'next/link'
 
 const schema = z.object({
   tipo: z.enum(['persona', 'empresa']),
-  nombre: z.string().min(1, 'Requerido'),
-  apellido: z.string().optional(),
+  nombreCompleto: z.string().min(2, 'Ingresá tu nombre completo.'),
   movil: z.string().min(8, 'Ingresá un número válido'),
   telefono: z.string().optional(),
   email: z.string().email('Correo inválido'),
@@ -21,9 +20,6 @@ const schema = z.object({
   password: z.string().min(6, 'Mínimo 6 caracteres'),
   passwordConfirm: z.string().min(6, 'Mínimo 6 caracteres'),
   terminos: z.literal(true, { errorMap: () => ({ message: 'Debés aceptar los términos' }) }),
-}).refine(d => d.tipo === 'empresa' || (d.apellido && d.apellido.length > 0), {
-  message: 'Requerido',
-  path: ['apellido'],
 }).refine(d => d.email === d.emailConfirm, {
   message: 'Los correos no coinciden',
   path: ['emailConfirm'],
@@ -50,12 +46,10 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
   const [confirmingCode, setConfirmingCode] = useState(false)
   const [resendStatus, setResendStatus] = useState<'idle' | 'sent' | 'error'>('idle')
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { tipo: 'persona' },
   })
-
-  const tipo = watch('tipo')
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
@@ -160,32 +154,18 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
               {...register('tipo')}
               className="accent-cyan w-4 h-4"
             />
-            <span className={`text-sm font-medium capitalize ${tipo === t ? 'text-cyan' : 'text-slate'}`}>
+            <span className="text-sm font-medium capitalize text-slate">
               {t === 'persona' ? 'Persona' : 'Empresa'}
             </span>
           </label>
         ))}
       </div>
 
-      {/* Nombre + Apellido */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Nombre <span className="text-status-red">*</span></label>
-          <input className={inputClass} placeholder="" {...register('nombre')} />
-          {errors.nombre && <p className={errorClass}>{errors.nombre.message}</p>}
-        </div>
-        <div>
-          <label className={labelClass}>
-            Apellido {tipo === 'persona' && <span className="text-status-red">*</span>}
-          </label>
-          <input
-            className={inputClass + (tipo === 'empresa' ? ' opacity-40 cursor-not-allowed' : '')}
-            placeholder=""
-            disabled={tipo === 'empresa'}
-            {...register('apellido')}
-          />
-          {errors.apellido && <p className={errorClass}>{errors.apellido.message}</p>}
-        </div>
+      {/* Nombre Completo */}
+      <div>
+        <label className={labelClass}>Nombre completo <span className="text-status-red">*</span></label>
+        <input className={inputClass} placeholder="" {...register('nombreCompleto')} />
+        {errors.nombreCompleto && <p className={errorClass}>{errors.nombreCompleto.message}</p>}
       </div>
 
       {/* Móvil + Teléfono */}
