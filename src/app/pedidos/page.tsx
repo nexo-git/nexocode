@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, ArrowRight, Plus, X, CreditCard, MapPin } from 'lucide-react'
+import { Package, ArrowRight, Plus, X, CreditCard, MapPin, Star, MessageSquare } from 'lucide-react'
 import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
 import { getMyAddresses } from '@/lib/addresses'
+import { createReview } from '@/lib/reviews'
 
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
@@ -44,6 +45,13 @@ export default function PedidosPage() {
   const [submitting, setSubmitting]   = useState(false)
   const [formError, setFormError]     = useState('')
 
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewRating, setReviewRating]       = useState(5)
+  const [reviewComment, setReviewComment]     = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewError, setReviewError]         = useState('')
+  const [reviewDone, setReviewDone]           = useState(false)
+
   useEffect(() => {
     Promise.all([getCurrentUser(), getMyOrders(), getMyAddresses()])
       .then(([current, ordersData, addrsData]) => {
@@ -57,6 +65,7 @@ export default function PedidosPage() {
       })
   }, [router])
 
+  const hasDelivered = useMemo(() => orders.some(o => o.status === 'entregado'), [orders])
   const { discountMap } = useMemo(() => calculateLoyalty(orders), [orders])
   const sortedOrders = useMemo(() =>
     [...orders].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
@@ -109,6 +118,18 @@ export default function PedidosPage() {
     setShowForm(false)
   }
 
+  async function handleSubmitReview(e: React.FormEvent) {
+    e.preventDefault()
+    if (reviewComment.trim().length < 10) { setReviewError('El comentario debe tener al menos 10 caracteres.'); return }
+    setReviewSubmitting(true)
+    setReviewError('')
+    const result = await createReview({ rating: reviewRating, comment: reviewComment.trim() })
+    setReviewSubmitting(false)
+    if ('error' in result) { setReviewError(result.error); return }
+    setReviewDone(true)
+    setTimeout(() => { setShowReviewModal(false); setReviewDone(false); setReviewComment('') }, 2000)
+  }
+
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
 
   return (
@@ -144,6 +165,71 @@ export default function PedidosPage() {
           </div>
         )}
 
+        {/* Modal: reseña */}
+        {showReviewModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowReviewModal(false)} />
+            <div className="relative bg-midnight border border-white/10 rounded-2xl p-8 max-w-sm w-full shadow-2xl">
+              <button onClick={() => setShowReviewModal(false)} className="absolute top-4 right-4 text-slate hover:text-ghost">
+                <X size={18} />
+              </button>
+              {reviewDone ? (
+                <div className="text-center py-4">
+                  <p className="text-status-green text-2xl mb-2">✓</p>
+                  <p className="text-ghost font-semibold">¡Gracias por tu reseña!</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="space-y-5">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-10 h-10 rounded-xl bg-cyan/10 flex items-center justify-center shrink-0">
+                      <MessageSquare size={18} className="text-cyan" />
+                    </div>
+                    <h3 className="text-ghost font-bold">Dejar reseña</h3>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-ghost/80 mb-2 block">Puntuación</label>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setReviewRating(n)}
+                          className="p-1 transition-transform hover:scale-110"
+                        >
+                          <Star
+                            size={26}
+                            className={n <= reviewRating ? 'text-yellow-400 fill-yellow-400' : 'text-white/20'}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-ghost/80 mb-1.5 block">Comentario</label>
+                    <textarea
+                      rows={4}
+                      className="w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm resize-none"
+                      placeholder="Contá tu experiencia con Nexo..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                    />
+                  </div>
+
+                  {reviewError && (
+                    <p className="text-sm text-status-red bg-status-red/10 border border-status-red/20 rounded-xl px-4 py-3">{reviewError}</p>
+                  )}
+
+                  <Button type="submit" size="md" className="w-full" loading={reviewSubmitting}>
+                    Enviar reseña
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between mb-10">
           <div>
@@ -151,13 +237,24 @@ export default function PedidosPage() {
             <h1 className="text-4xl font-bold text-ghost mb-2">Tus pedidos</h1>
             <p className="text-slate">Hola <span className="text-ghost font-medium">{user?.nombre}</span>, acá gestionás todos tus envíos con Nexo.</p>
           </div>
-          <button
-            onClick={handleOpenForm}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan text-space-black font-semibold text-sm hover:bg-cyan/90 transition-colors mt-1 shrink-0"
-          >
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            {showForm ? 'Cancelar' : 'Agregar pedido'}
-          </button>
+          <div className="flex items-center gap-2 mt-1 shrink-0">
+            {hasDelivered && !reviewDone && (
+              <button
+                onClick={() => { setShowReviewModal(true); setReviewError('') }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate hover:text-ghost hover:border-white/20 font-medium text-sm transition-colors"
+              >
+                <Star size={15} />
+                Reseña
+              </button>
+            )}
+            <button
+              onClick={handleOpenForm}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan text-space-black font-semibold text-sm hover:bg-cyan/90 transition-colors"
+            >
+              {showForm ? <X size={16} /> : <Plus size={16} />}
+              {showForm ? 'Cancelar' : 'Agregar pedido'}
+            </button>
+          </div>
         </div>
 
         {/* Formulario */}

@@ -5,6 +5,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import * as iam from 'aws-cdk-lib/aws-iam'
 import * as budgets from 'aws-cdk-lib/aws-budgets'
+import * as cr from 'aws-cdk-lib/custom-resources'
 import { Construct } from 'constructs'
 
 export class NexoStack extends cdk.Stack {
@@ -98,6 +99,19 @@ export class NexoStack extends cdk.Stack {
     })
 
     addressesTable.addGlobalSecondaryIndex({
+      indexName: 'userId-index',
+      partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+    })
+
+    // ─── DynamoDB — Reseñas ─────────────────────────────────────────
+    const reviewsTable = new dynamodb.Table(this, 'NexoReviewsTable', {
+      tableName: 'nexo-reviews',
+      partitionKey: { name: 'reviewId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    })
+
+    reviewsTable.addGlobalSecondaryIndex({
       indexName: 'userId-index',
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
     })
@@ -459,6 +473,128 @@ export class NexoStack extends cdk.Stack {
 
     ordersTable.grantReadWriteData(ordersLambda)
 
+    // ─── Lambda — Reseñas ────────────────────────────────────────────
+    const reviewsLambda = new lambda.Function(this, 'NexoReviewsLambda', {
+      functionName: 'nexo-reviews-api',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline(`
+        const { DynamoDBClient, PutItemCommand, ScanCommand, QueryCommand } = require('@aws-sdk/client-dynamodb')
+        const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
+        const { randomUUID } = require('crypto')
+
+        const dynamo = new DynamoDBClient({})
+        const REVIEWS_TABLE = process.env.REVIEWS_TABLE
+        const ORDERS_TABLE = process.env.ORDERS_TABLE
+
+        exports.handler = async (event) => {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Authorization,Content-Type'
+          }
+          const method = event.httpMethod
+
+          try {
+            // GET /reviews — público, sin auth
+            if (method === 'GET') {
+              const result = await dynamo.send(new ScanCommand({ TableName: REVIEWS_TABLE }))
+              const items = (result.Items || []).map(i => unmarshall(i))
+              items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              return { statusCode: 200, headers, body: JSON.stringify(items) }
+            }
+
+            // POST /reviews — requiere auth, valida pedido entregado
+            if (method === 'POST') {
+              const claims = event.requestContext?.authorizer?.claims || {}
+              const userId = claims.sub
+              if (!userId) return { statusCode: 401, headers, body: JSON.stringify({ error: 'No autenticado.' }) }
+
+              const body = JSON.parse(event.body || '{}')
+              const rating = Number(body.rating)
+              if (!rating || rating < 1 || rating > 5) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Rating debe ser entre 1 y 5.' }) }
+              }
+              if (!body.comment || body.comment.trim().length < 10) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'El comentario debe tener al menos 10 caracteres.' }) }
+              }
+
+              // Verificar pedido entregado
+              const ordersResult = await dynamo.send(new QueryCommand({
+                TableName: ORDERS_TABLE,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                FilterExpression: '#s = :entregado',
+                ExpressionAttributeNames: { '#s': 'status' },
+                ExpressionAttributeValues: marshall({ ':uid': userId, ':entregado': 'entregado' }),
+              }))
+              if (!ordersResult.Count || ordersResult.Count === 0) {
+                return { statusCode: 403, headers, body: JSON.stringify({ error: 'Necesitás al menos un pedido entregado para dejar una reseña.' }) }
+              }
+
+              // Verificar que el usuario no haya ya dejado reseña
+              const existing = await dynamo.send(new QueryCommand({
+                TableName: REVIEWS_TABLE,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                ExpressionAttributeValues: marshall({ ':uid': userId }),
+              }))
+              if (existing.Count && existing.Count > 0) {
+                return { statusCode: 409, headers, body: JSON.stringify({ error: 'Ya dejaste una reseña anteriormente.' }) }
+              }
+
+              const userName = claims.given_name || claims.email?.split('@')[0] || 'Usuario'
+              const item = {
+                reviewId: randomUUID(),
+                userId,
+                userName,
+                rating,
+                comment: body.comment.trim(),
+                createdAt: new Date().toISOString(),
+              }
+              await dynamo.send(new PutItemCommand({ TableName: REVIEWS_TABLE, Item: marshall(item) }))
+              return { statusCode: 201, headers, body: JSON.stringify(item) }
+            }
+
+            return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) }
+          } catch (err) {
+            return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) }
+          }
+        }
+      `),
+      environment: {
+        REVIEWS_TABLE: reviewsTable.tableName,
+        ORDERS_TABLE: ordersTable.tableName,
+      },
+      timeout: cdk.Duration.seconds(15),
+    })
+
+    reviewsTable.grantReadWriteData(reviewsLambda)
+    ordersTable.grantReadData(reviewsLambda)
+
+    // ─── Seed de reseñas iniciales ───────────────────────────────────
+    const seedDate1 = '2025-11-15T14:23:00.000Z'
+    const seedDate2 = '2025-12-03T09:10:00.000Z'
+    const seedDate3 = '2026-01-20T16:45:00.000Z'
+
+    new cr.AwsCustomResource(this, 'ReviewsSeed', {
+      onCreate: {
+        service: 'DynamoDB',
+        action: 'batchWriteItem',
+        parameters: {
+          RequestItems: {
+            'nexo-reviews': [
+              { PutRequest: { Item: { reviewId: { S: 'seed-001' }, userId: { S: 'seed' }, userName: { S: 'Ana Rodríguez' }, rating: { N: '5' }, comment: { S: '¡Increíble servicio! Mi paquete llegó en 5 días y en perfectas condiciones. Definitivamente volvería a usar Nexo.' }, createdAt: { S: seedDate1 } } } },
+              { PutRequest: { Item: { reviewId: { S: 'seed-002' }, userId: { S: 'seed' }, userName: { S: 'Carlos Jiménez' }, rating: { N: '5' }, comment: { S: 'Super rápido y confiable. Ya llevo 3 pedidos con Nexo y siempre excelente. El seguimiento en tiempo real es muy útil.' }, createdAt: { S: seedDate2 } } } },
+              { PutRequest: { Item: { reviewId: { S: 'seed-003' }, userId: { S: 'seed' }, userName: { S: 'María González' }, rating: { N: '5' }, comment: { S: 'Muy buena experiencia. Precios justos y atención al cliente excelente cuando tuve una consulta.' }, createdAt: { S: seedDate3 } } } },
+            ],
+          },
+        },
+        physicalResourceId: cr.PhysicalResourceId.of('ReviewsSeed'),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [reviewsTable.tableArn] }),
+    })
+
     // ─── API Gateway ─────────────────────────────────────────────────
     const api = new apigateway.RestApi(this, 'NexoAdminApi', {
       restApiName: 'nexo-admin-api',
@@ -504,6 +640,12 @@ export class NexoStack extends cdk.Stack {
     adminOrdersResource.addMethod('POST', ordersIntegration, authOptions)
     adminOrderResource.addMethod('PUT', ordersIntegration, authOptions)
     adminOrderResource.addMethod('DELETE', ordersIntegration, authOptions)
+
+    // Rutas /reviews — GET público, POST con auth
+    const reviewsIntegration = new apigateway.LambdaIntegration(reviewsLambda)
+    const reviewsResource = api.root.addResource('reviews')
+    reviewsResource.addMethod('GET', reviewsIntegration)
+    reviewsResource.addMethod('POST', reviewsIntegration, authOptions)
 
     // Rutas /addresses (usuario autenticado)
     const addressesIntegration = new apigateway.LambdaIntegration(addressesLambda)

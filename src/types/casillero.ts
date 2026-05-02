@@ -41,6 +41,15 @@ export interface NexoAddress {
   createdAt: string
 }
 
+export interface NexoReview {
+  reviewId: string
+  userId: string
+  userName: string
+  rating: number
+  comment: string
+  createdAt: string
+}
+
 export interface RegisterData {
   tipo: UserTipo
   nombre: string

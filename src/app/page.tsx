@@ -1,7 +1,8 @@
 import HeroSection from '@/components/sections/HeroSection'
 import HowItWorksSection from '@/components/sections/HowItWorksSection'
+import NexoFielSection from '@/components/sections/NexoFielSection'
 import ValuesSection from '@/components/sections/ValuesSection'
-import TestimonialsSection from '@/components/sections/TestimonialsSection'
+import ReviewsSection from '@/components/sections/ReviewsSection'
 import CtaBannerSection from '@/components/sections/CtaBannerSection'
 
 const stats = [
@@ -29,8 +30,9 @@ export default function Home() {
       </div>
 
       <HowItWorksSection />
+      <NexoFielSection />
       <ValuesSection />
-      <TestimonialsSection />
+      <ReviewsSection />
 
       <CtaBannerSection
         heading="¿Listo para tu primer envío?"
