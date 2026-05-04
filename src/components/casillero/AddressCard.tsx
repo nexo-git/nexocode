@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, Package, MapPin } from 'lucide-react'
+import { Copy, Check, Package, MapPin, ArrowRight } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import Link from 'next/link'
 import type { NexoUser } from '@/types/casillero'
 import { generateAddress } from '@/lib/casillero'
 
@@ -85,6 +86,11 @@ export default function AddressCard({ user }: AddressCardProps) {
           </Button>
         </a>
       </div>
+      <Link href="/pedidos" className="block mt-3">
+        <Button variant="secondary" size="md" className="w-full" icon={<ArrowRight size={16} />} iconPosition="right">
+          Tus pedidos
+        </Button>
+      </Link>
     </Card>
   )
 }

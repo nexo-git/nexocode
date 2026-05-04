@@ -250,15 +250,6 @@ export default function PedidosPage() {
             <p className="text-slate">Hola <span className="text-ghost font-medium">{user?.nombre}</span>, acá gestionás todos tus envíos con Nexo.</p>
           </div>
           <div className="flex items-center gap-2 mt-1 shrink-0">
-            {hasDelivered && !reviewDone && (
-              <button
-                onClick={() => { setShowReviewModal(true); setReviewError('') }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate hover:text-ghost hover:border-white/20 font-medium text-sm transition-colors"
-              >
-                <Star size={15} />
-                Reseña
-              </button>
-            )}
             <button
               onClick={handleOpenForm}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan text-space-black font-semibold text-sm hover:bg-cyan/90 transition-colors"
@@ -349,89 +340,102 @@ export default function PedidosPage() {
           {/* Lista de pedidos — orden 2 en mobile, 1 en desktop */}
           <div className="flex-1 min-w-0 order-2 lg:order-1">
             {sortedOrders.length > 0 ? (
-              <div className="space-y-3">
-                {sortedOrders.map((order) => {
-                  const st       = statusLabel[order.status] ?? statusLabel.en_ruta
-                  const discount = discountMap.get(order.orderId)
-                  return (
-                    <div key={order.orderId} className="bg-midnight border border-white/5 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="text-ghost font-medium text-sm truncate">{order.trackingNumber}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${st.color}`}>{st.label}</span>
-                          {discount && (
-                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 bg-cyan/10 text-cyan border border-cyan/20">
-                              ✦ {discount}% Nexo Fiel
-                            </span>
-                          )}
-                        </div>
-                        {order.description && (
-                          <p className="text-slate text-xs truncate">{order.description}</p>
-                        )}
-                        {order.deliveryDistrict && (
-                          <p className="text-slate/60 text-xs truncate flex items-center gap-1 mt-0.5">
-                            <MapPin size={10} className="shrink-0" />
-                            {order.deliveryDistrict}, {order.deliveryCanton}, {order.deliveryProvince}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3 flex-wrap mt-1">
-                          <p className="text-slate text-xs">
-                            {new Date(order.startDate).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </p>
-                          {order.peso != null && (
-                            <span className="text-xs text-ghost/60">{order.peso} kg</span>
-                          )}
-                          {order.totalPagado != null && (
-                            discount ? (
-                              <span className="flex items-center gap-1.5">
-                                <span className="line-through text-slate text-xs">${order.totalPagado.toFixed(2)}</span>
-                                <span className="text-xs font-semibold text-status-green">
-                                  ${(order.totalPagado * (1 - discount / 100)).toFixed(2)}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="text-xs font-medium text-cyan">${order.totalPagado.toFixed(2)}</span>
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Botón pago */}
-                      {(() => {
-                        const { label, enabled } = payButtonProps(order.status)
-                        return (
-                          <button
-                            disabled={!enabled || payingOrderId === order.orderId}
-                            onClick={enabled ? () => handlePay(order.orderId) : undefined}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-colors
-                              ${enabled
-                                ? 'bg-status-green/10 text-status-green border-status-green/20 hover:bg-status-green/20 cursor-pointer'
-                                : 'bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60'
-                              }`}
-                          >
-                            <CreditCard size={13} />
-                            {payingOrderId === order.orderId ? 'Redirigiendo…' : label}
-                            {enabled && (
-                              <span className="flex items-center gap-0.5 ml-0.5">
-                                <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
-                                  <rect width="38" height="24" rx="3" fill="#1A1F71"/>
-                                  <text x="4" y="17" fontFamily="Arial" fontWeight="bold" fontSize="13" fill="white" letterSpacing="0">VISA</text>
-                                </svg>
-                                <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
-                                  <rect width="38" height="24" rx="3" fill="#252525"/>
-                                  <circle cx="15" cy="12" r="7" fill="#EB001B"/>
-                                  <circle cx="23" cy="12" r="7" fill="#F79E1B"/>
-                                  <path d="M19 6.8a7 7 0 0 1 0 10.4A7 7 0 0 1 19 6.8z" fill="#FF5F00"/>
-                                </svg>
+              <>
+                <div className="space-y-3">
+                  {sortedOrders.map((order) => {
+                    const st       = statusLabel[order.status] ?? statusLabel.en_ruta
+                    const discount = discountMap.get(order.orderId)
+                    return (
+                      <div key={order.orderId} className="bg-midnight border border-white/5 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <p className="text-ghost font-medium text-sm truncate">{order.trackingNumber}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${st.color}`}>{st.label}</span>
+                            {discount && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 bg-cyan/10 text-cyan border border-cyan/20">
+                                ✦ {discount}% Nexo Fiel
                               </span>
                             )}
-                          </button>
-                        )
-                      })()}
-                    </div>
-                  )
-                })}
-              </div>
+                          </div>
+                          {order.description && (
+                            <p className="text-slate text-xs truncate">{order.description}</p>
+                          )}
+                          {order.deliveryDistrict && (
+                            <p className="text-slate/60 text-xs truncate flex items-center gap-1 mt-0.5">
+                              <MapPin size={10} className="shrink-0" />
+                              {order.deliveryDistrict}, {order.deliveryCanton}, {order.deliveryProvince}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 flex-wrap mt-1">
+                            <p className="text-slate text-xs">
+                              {new Date(order.startDate).toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                            {order.peso != null && (
+                              <span className="text-xs text-ghost/60">{order.peso} kg</span>
+                            )}
+                            {order.totalPagado != null && (
+                              discount ? (
+                                <span className="flex items-center gap-1.5">
+                                  <span className="line-through text-slate text-xs">${order.totalPagado.toFixed(2)}</span>
+                                  <span className="text-xs font-semibold text-status-green">
+                                    ${(order.totalPagado * (1 - discount / 100)).toFixed(2)}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-xs font-medium text-cyan">${order.totalPagado.toFixed(2)}</span>
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Botón pago */}
+                        {(() => {
+                          const { label, enabled } = payButtonProps(order.status)
+                          return (
+                            <button
+                              disabled={!enabled || payingOrderId === order.orderId}
+                              onClick={enabled ? () => handlePay(order.orderId) : undefined}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-colors
+                                ${enabled
+                                  ? 'bg-status-green/10 text-status-green border-status-green/20 hover:bg-status-green/20 cursor-pointer'
+                                  : 'bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60'
+                                }`}
+                            >
+                              <CreditCard size={13} />
+                              {payingOrderId === order.orderId ? 'Redirigiendo…' : label}
+                              {enabled && (
+                                <span className="flex items-center gap-0.5 ml-0.5">
+                                  <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
+                                    <rect width="38" height="24" rx="3" fill="#1A1F71"/>
+                                    <text x="4" y="17" fontFamily="Arial" fontWeight="bold" fontSize="13" fill="white" letterSpacing="0">VISA</text>
+                                  </svg>
+                                  <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
+                                    <rect width="38" height="24" rx="3" fill="#252525"/>
+                                    <circle cx="15" cy="12" r="7" fill="#EB001B"/>
+                                    <circle cx="23" cy="12" r="7" fill="#F79E1B"/>
+                                    <path d="M19 6.8a7 7 0 0 1 0 10.4A7 7 0 0 1 19 6.8z" fill="#FF5F00"/>
+                                  </svg>
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })()}
+                      </div>
+                    )
+                  })}
+                </div>
+                {hasDelivered && !reviewDone && (
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => { setShowReviewModal(true); setReviewError('') }}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate hover:text-ghost hover:border-white/20 font-medium text-sm transition-colors"
+                    >
+                      <Star size={15} />
+                      Dejar reseña
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="border border-dashed border-white/10 rounded-2xl p-14 flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-5">
