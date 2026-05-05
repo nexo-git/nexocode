@@ -13,6 +13,7 @@ export const NAV_LINKS = [
   { label: 'Cómo funciona', href: '/#como-funciona' },
   { label: 'Casillero Gratis', href: '/casillero' },
   { label: 'Asistente',     href: '/asistente' },
+  { label: 'Nosotros',      href: '/nosotros' },
 ]
 
 export const CR_PROVINCES = [
