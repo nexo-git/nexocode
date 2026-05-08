@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login/
+Disallow: /cuenta/
+Disallow: /pedidos/
+Disallow: /direccion/
+Disallow: /asistente/
+Sitemap: https://www.nexocourier.com/sitemap.xml

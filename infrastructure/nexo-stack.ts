@@ -646,37 +646,24 @@ export class NexoStack extends cdk.Stack {
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [reviewsTable.tableArn] }),
     })
 
-    // ─── Secrets Manager — ONVO ─────────────────────────────────────
-    const onvoSecret = new secretsmanager.Secret(this, 'OnvoSecret', {
-      secretName: 'nexo/onvo',
-      description: 'ONVO payment gateway: apiKey y webhookSecret. Actualizar manualmente desde consola AWS.',
+    // ─── Secrets Manager — Stripe ────────────────────────────────────
+    // TODO: Stripe — actualizar manualmente en AWS Secrets Manager con secretKey y webhookSecret reales
+    const stripeSecret = new secretsmanager.Secret(this, 'StripeSecret', {
+      secretName: 'nexo/stripe',
+      description: 'Stripe: secretKey y webhookSecret. Actualizar manualmente desde consola AWS.',
       secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
-        apiKey: 'PENDIENTE_DE_ACTIVACION',
-        webhookSecret: 'PENDIENTE_DE_ACTIVACION',
+        secretKey: 'PENDIENTE',
+        webhookSecret: 'PENDIENTE',
       })),
     })
 
     // ─── Lambda — Pagos: crear sesión de cobro ───────────────────────
+    // TODO: Stripe — crear PaymentIntent y retornar URL de checkout (Payment Links o Checkout Session)
     const paymentCreateLambda = new lambda.Function(this, 'NexoPaymentCreateLambda', {
       functionName: 'nexo-payment-create',
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
-        const { DynamoDBClient, GetItemCommand, QueryCommand, UpdateItemCommand } = require('@aws-sdk/client-dynamodb')
-        const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
-        const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager')
-
-        const dynamo = new DynamoDBClient({})
-        const sm = new SecretsManagerClient({})
-        const ORDERS_TABLE = process.env.ORDERS_TABLE
-        const SECRET_ARN = process.env.SECRET_ARN
-        const ONVO_API = 'https://api.onvopay.com/v1'
-
-        async function getSecret() {
-          const res = await sm.send(new GetSecretValueCommand({ SecretId: SECRET_ARN }))
-          return JSON.parse(res.SecretString)
-        }
-
         exports.handler = async (event) => {
           const allowed = (process.env.CORS_ORIGINS || 'https://www.nexocourier.com').split(',')
           const reqOrigin = (event.headers || {})['origin'] || (event.headers || {})['Origin'] || ''
@@ -687,180 +674,38 @@ export class NexoStack extends cdk.Stack {
             'Access-Control-Allow-Headers': 'Authorization,Content-Type',
             'Vary': 'Origin'
           }
-          try {
-            const claims = event.requestContext?.authorizer?.claims || {}
-            const userId = claims.sub
-            if (!userId) return { statusCode: 401, headers, body: JSON.stringify({ error: 'No autenticado.' }) }
-
-            const body = JSON.parse(event.body || '{}')
-            const { orderId } = body
-            if (!orderId) return { statusCode: 400, headers, body: JSON.stringify({ error: 'orderId requerido.' }) }
-
-            // Obtener y verificar el pedido
-            const result = await dynamo.send(new QueryCommand({
-              TableName: ORDERS_TABLE,
-              IndexName: 'userId-index',
-              KeyConditionExpression: 'userId = :uid',
-              FilterExpression: 'orderId = :oid',
-              ExpressionAttributeValues: marshall({ ':uid': userId, ':oid': orderId }),
-            }))
-            if (!result.Count || result.Count === 0) {
-              return { statusCode: 404, headers, body: JSON.stringify({ error: 'Pedido no encontrado.' }) }
-            }
-            const order = unmarshall(result.Items[0])
-            if (!order.totalPagado || order.totalPagado <= 0) {
-              return { statusCode: 400, headers, body: JSON.stringify({ error: 'El pedido aún no tiene monto asignado.' }) }
-            }
-            if (!['bodega_cr', 'pendiente_pago'].includes(order.status)) {
-              return { statusCode: 400, headers, body: JSON.stringify({ error: 'El pedido no está listo para pagar.' }) }
-            }
-
-            const { apiKey } = await getSecret()
-            const amountCents = Math.round(order.totalPagado * 100)
-            const baseUrl = process.env.FRONTEND_URL || 'https://www.nexocourier.com'
-
-            const onvoRes = await fetch(\`\${ONVO_API}/checkout/sessions/one-time-link\`, {
-              method: 'POST',
-              headers: { 'Authorization': \`Bearer \${apiKey}\`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                amount: amountCents,
-                currency: 'USD',
-                description: \`Nexo Courier – Pedido \${order.trackingNumber}\`,
-                successUrl: \`\${baseUrl}/pedidos?pago=exitoso&orderId=\${orderId}\`,
-                cancelUrl: \`\${baseUrl}/pedidos?pago=cancelado\`,
-              }),
-            })
-
-            if (!onvoRes.ok) {
-              const err = await onvoRes.json()
-              console.error(JSON.stringify({ event: 'ONVO_CREATE_ERROR', orderId, err }))
-              return { statusCode: 502, headers, body: JSON.stringify({ error: 'Error al crear la sesión de pago.' }) }
-            }
-
-            const session = await onvoRes.json()
-            console.log(JSON.stringify({ event: 'PAYMENT_SESSION_CREATED', orderId, userId, amount: amountCents, sessionId: session.id }))
-            return { statusCode: 200, headers, body: JSON.stringify({ checkoutUrl: session.url || session.checkoutUrl || session.link }) }
-          } catch (err) {
-            console.error(JSON.stringify({ event: 'PAYMENT_CREATE_EXCEPTION', error: err.message }))
-            return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error interno.' }) }
-          }
+          return { statusCode: 503, headers, body: JSON.stringify({ error: 'Pagos no disponibles aún.' }) }
         }
       `),
       environment: {
-        ORDERS_TABLE: ordersTable.tableName,
-        SECRET_ARN: onvoSecret.secretArn,
         CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
-        FRONTEND_URL: 'https://www.nexocourier.com',
       },
       timeout: cdk.Duration.seconds(30),
     })
 
     ordersTable.grantReadData(paymentCreateLambda)
-    onvoSecret.grantRead(paymentCreateLambda)
+    stripeSecret.grantRead(paymentCreateLambda)
 
-    // ─── Lambda — Pagos: webhook de ONVO ────────────────────────────
+    // ─── Lambda — Pagos: webhook de Stripe ──────────────────────────
+    // TODO: Stripe — validar firma con stripe.webhooks.constructEvent y actualizar pedido a pagado_en_ruta
     const paymentWebhookLambda = new lambda.Function(this, 'NexoPaymentWebhookLambda', {
       functionName: 'nexo-payment-webhook',
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
-        const { DynamoDBClient, UpdateItemCommand, QueryCommand } = require('@aws-sdk/client-dynamodb')
-        const { marshall } = require('@aws-sdk/util-dynamodb')
-        const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager')
-
-        const dynamo = new DynamoDBClient({})
-        const sm = new SecretsManagerClient({})
-        const ORDERS_TABLE = process.env.ORDERS_TABLE
-        const SECRET_ARN = process.env.SECRET_ARN
-
-        async function getSecret() {
-          const res = await sm.send(new GetSecretValueCommand({ SecretId: SECRET_ARN }))
-          return JSON.parse(res.SecretString)
-        }
-
         exports.handler = async (event) => {
-          const headers = { 'Content-Type': 'application/json' }
-          const now = new Date().toISOString()
-          const rawBody = event.body || '{}'
-
-          try {
-            // Validar firma ONVO
-            const incomingSecret = (event.headers || {})['X-Webhook-Secret'] || (event.headers || {})['x-webhook-secret'] || ''
-            const { webhookSecret } = await getSecret()
-
-            console.log(JSON.stringify({ event: 'WEBHOOK_RECEIVED', hasSecret: !!incomingSecret, at: now }))
-
-            if (!incomingSecret || incomingSecret !== webhookSecret) {
-              console.error(JSON.stringify({ event: 'WEBHOOK_INVALID_SECRET', at: now }))
-              return { statusCode: 401, headers, body: JSON.stringify({ error: 'Firma inválida.' }) }
-            }
-
-            const payload = JSON.parse(rawBody)
-            const { type, data } = payload
-
-            console.log(JSON.stringify({ event: 'WEBHOOK_PAYLOAD', type, dataId: data?.id, status: data?.status, at: now }))
-
-            // Solo procesar pagos confirmados
-            if (type !== 'payment-intent.succeeded' && data?.status !== 'succeeded') {
-              return { statusCode: 200, headers, body: JSON.stringify({ received: true }) }
-            }
-
-            const onvoTransactionId = data?.id
-            const metadata = data?.metadata || {}
-            const orderId = metadata?.orderId
-
-            if (!orderId) {
-              console.error(JSON.stringify({ event: 'WEBHOOK_MISSING_ORDER_ID', dataId: onvoTransactionId, at: now }))
-              return { statusCode: 200, headers, body: JSON.stringify({ received: true }) }
-            }
-
-            // Idempotencia: verificar si ya fue procesado
-            const existing = await dynamo.send(new QueryCommand({
-              TableName: ORDERS_TABLE,
-              IndexName: 'userId-index',
-              KeyConditionExpression: 'userId = :dummy',
-              FilterExpression: 'orderId = :oid AND attribute_exists(onvoTransactionId)',
-              ExpressionAttributeValues: marshall({ ':dummy': '', ':oid': orderId }),
-            })).catch(() => ({ Count: 0 }))
-
-            // Actualizar pedido a pagado_en_ruta
-            await dynamo.send(new UpdateItemCommand({
-              TableName: ORDERS_TABLE,
-              Key: marshall({ orderId }),
-              UpdateExpression: 'SET #s = :s, onvoTransactionId = :txid, paidAt = :paid, updatedAt = :u',
-              ExpressionAttributeNames: { '#s': 'status' },
-              ExpressionAttributeValues: marshall({
-                ':s': 'pagado_en_ruta',
-                ':txid': onvoTransactionId,
-                ':paid': now,
-                ':u': now,
-              }),
-              ConditionExpression: 'attribute_not_exists(onvoTransactionId)',
-            })).catch((err) => {
-              if (err.name === 'ConditionalCheckFailedException') {
-                console.log(JSON.stringify({ event: 'WEBHOOK_DUPLICATE', orderId, at: now }))
-              } else {
-                throw err
-              }
-            })
-
-            console.log(JSON.stringify({ event: 'ORDER_PAID', orderId, onvoTransactionId, at: now }))
-            return { statusCode: 200, headers, body: JSON.stringify({ received: true }) }
-          } catch (err) {
-            console.error(JSON.stringify({ event: 'WEBHOOK_EXCEPTION', error: err.message, at: now }))
-            return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error interno.' }) }
-          }
+          return { statusCode: 200, body: JSON.stringify({ received: true }) }
         }
       `),
       environment: {
         ORDERS_TABLE: ordersTable.tableName,
-        SECRET_ARN: onvoSecret.secretArn,
+        SECRET_ARN: stripeSecret.secretArn,
       },
       timeout: cdk.Duration.seconds(30),
     })
 
     ordersTable.grantReadWriteData(paymentWebhookLambda)
-    onvoSecret.grantRead(paymentWebhookLambda)
+    stripeSecret.grantRead(paymentWebhookLambda)
 
     // ─── API Gateway ─────────────────────────────────────────────────
     const api = new apigateway.RestApi(this, 'NexoAdminApi', {

@@ -3,7 +3,20 @@
     "allow": [
       "Bash(cdk deploy *)",
       "Bash(xargs head *)",
-      "Read(//c/Users/a/AppData/Local/Temp/claude/c--Users-a-Desktop-NEXO-nexocode/0b0534d1-d59e-459b-abdf-059c1eadd462/tasks/**)"
+      "Read(//c/Users/a/AppData/Local/Temp/claude/c--Users-a-Desktop-NEXO-nexocode/0b0534d1-d59e-459b-abdf-059c1eadd462/tasks/**)",
+      "Bash(git push *)",
+      "Read(//c/Users/a/.claude/plans/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Read(//c/Users/a/Desktop/NEXO/**)",
+      "Bash(npx cdk *)",
+      "Bash(npx claude-code-templates@latest --skill development/code-reviewer)",
+      "Bash(npx claude-code-templates@latest --skill development/senior-backend)",
+      "Read(//c/Users/a/.claude/projects/c--Users-a-Desktop-NEXO-nexocode/memory/**)",
+      "Bash(curl -s \"https://qduhjqlmfd.execute-api.us-east-1.amazonaws.com/prod/reviews\")",
+      "Bash(tasklist)",
+      "WebSearch"
     ],
     "additionalDirectories": [
       "c:\\Users\\a\\Desktop\\NEXO\\nexocode\\src\\app\\admin"

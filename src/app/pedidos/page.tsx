@@ -7,7 +7,6 @@ import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
 import { getMyAddresses } from '@/lib/addresses'
 import { createReview } from '@/lib/reviews'
-import { createPaymentSession } from '@/lib/payments'
 
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
@@ -26,7 +25,7 @@ const statusLabel: Record<string, { label: string; color: string }> = {
 
 function payButtonProps(status: string): { label: string; enabled: boolean } {
   if (status === 'bodega_cr' || status === 'pendiente_pago')
-    return { label: 'Listo para Pagar', enabled: true }
+    return { label: 'Próximamente', enabled: false }
   if (status === 'pagado_en_ruta' || status === 'entregado')
     return { label: 'Pagado', enabled: false }
   return { label: 'Pendiente de facturar', enabled: false }
@@ -52,8 +51,6 @@ export default function PedidosPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewError, setReviewError]         = useState('')
   const [reviewDone, setReviewDone]           = useState(false)
-  const [payingOrderId, setPayingOrderId]     = useState<string | null>(null)
-  const [payError, setPayError]               = useState('')
 
   useEffect(() => {
     Promise.all([getCurrentUser(), getMyOrders(), getMyAddresses()])
@@ -119,15 +116,6 @@ export default function PedidosPage() {
     setTracking('')
     setDescription('')
     setShowForm(false)
-  }
-
-  async function handlePay(orderId: string) {
-    setPayingOrderId(orderId)
-    setPayError('')
-    const result = await createPaymentSession(orderId)
-    setPayingOrderId(null)
-    if ('error' in result) { setPayError(result.error); return }
-    window.location.href = result.checkoutUrl
   }
 
   async function handleSubmitReview(e: React.FormEvent) {
@@ -327,13 +315,6 @@ export default function PedidosPage() {
           </form>
         )}
 
-        {/* Error de pago */}
-        {payError && (
-          <div className="mb-4 text-sm text-status-red bg-status-red/10 border border-status-red/20 rounded-xl px-4 py-3">
-            {payError}
-          </div>
-        )}
-
         {/* Layout: tabla + sidebar */}
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
@@ -390,33 +371,14 @@ export default function PedidosPage() {
 
                         {/* Botón pago */}
                         {(() => {
-                          const { label, enabled } = payButtonProps(order.status)
+                          const { label } = payButtonProps(order.status)
                           return (
                             <button
-                              disabled={!enabled || payingOrderId === order.orderId}
-                              onClick={enabled ? () => handlePay(order.orderId) : undefined}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-colors
-                                ${enabled
-                                  ? 'bg-status-green/10 text-status-green border-status-green/20 hover:bg-status-green/20 cursor-pointer'
-                                  : 'bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60'
-                                }`}
+                              disabled
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60"
                             >
                               <CreditCard size={13} />
-                              {payingOrderId === order.orderId ? 'Redirigiendo…' : label}
-                              {enabled && (
-                                <span className="flex items-center gap-0.5 ml-0.5">
-                                  <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
-                                    <rect width="38" height="24" rx="3" fill="#1A1F71"/>
-                                    <text x="4" y="17" fontFamily="Arial" fontWeight="bold" fontSize="13" fill="white" letterSpacing="0">VISA</text>
-                                  </svg>
-                                  <svg width="22" height="14" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-sm">
-                                    <rect width="38" height="24" rx="3" fill="#252525"/>
-                                    <circle cx="15" cy="12" r="7" fill="#EB001B"/>
-                                    <circle cx="23" cy="12" r="7" fill="#F79E1B"/>
-                                    <path d="M19 6.8a7 7 0 0 1 0 10.4A7 7 0 0 1 19 6.8z" fill="#FF5F00"/>
-                                  </svg>
-                                </span>
-                              )}
+                              {label}
                             </button>
                           )
                         })()}

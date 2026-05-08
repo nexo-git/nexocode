@@ -33,6 +33,23 @@ export const metadata: Metadata = {
   },
 }
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'nexo',
+  legalName: 'NexoCode LLC',
+  url: 'https://www.nexocourier.com',
+  logo: 'https://www.nexocourier.com/POSITIVO.png',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    availableLanguage: ['Spanish', 'English'],
+    contactOption: 'TollFree',
+  },
+  areaServed: ['CR', 'US'],
+  description: 'Courier y envíos USA → Costa Rica con rastreo en tiempo real y precios claros.',
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -40,6 +57,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         <AmplifyProvider>
           <ThemeProvider>

@@ -98,11 +98,14 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-slate text-xs">
-            © {new Date().getFullYear()} nexo CR. Todos los derechos reservados.
+            © {new Date().getFullYear()} NexoCode LLC. Todos los derechos reservados.
           </p>
-          <p className="text-slate text-xs">
-            Hecho en Costa Rica 🇨🇷
-          </p>
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            <Link href="/terminos" className="text-slate text-xs hover:text-cyan transition-colors">Términos</Link>
+            <Link href="/privacidad" className="text-slate text-xs hover:text-cyan transition-colors">Privacidad</Link>
+            <Link href="/reembolsos" className="text-slate text-xs hover:text-cyan transition-colors">Reembolsos</Link>
+            <p className="text-slate text-xs">Hecho en Costa Rica 🇨🇷</p>
+          </div>
         </div>
       </div>
     </footer>

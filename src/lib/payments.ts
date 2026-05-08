@@ -2,6 +2,7 @@ import { getAuthToken } from '@/lib/auth'
 
 const API = process.env.NEXT_PUBLIC_ADMIN_API_URL ?? ''
 
+// TODO: Stripe — el backend retornará checkoutUrl desde una Stripe Checkout Session
 export async function createPaymentSession(
   orderId: string
 ): Promise<{ checkoutUrl: string } | { error: string }> {
