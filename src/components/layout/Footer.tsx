@@ -84,11 +84,11 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:nexxo.courier@gmail.com"
+                  href="mailto:soporte@nexocourier.com"
                   className="flex items-center gap-2.5 text-slate text-sm hover:text-cyan transition-colors"
                 >
                   <Mail size={16} />
-                  nexxo.courier@gmail.com
+                  soporte@nexocourier.com
                 </a>
               </li>
             </ul>

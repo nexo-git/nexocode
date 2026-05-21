@@ -81,7 +81,7 @@ export default function LegalPage({ titleEs, titleEn, lastUpdated, sectionsEs, s
             {lang === 'es'
               ? 'Para consultas sobre estos documentos, contactanos a '
               : 'For questions about these documents, contact us at '}
-            <a href="mailto:nexxo.courier@gmail.com" className="text-cyan hover:underline">nexxo.courier@gmail.com</a>
+            <a href="mailto:soporte@nexocourier.com" className="text-cyan hover:underline">soporte@nexocourier.com</a>
             {lang === 'es' ? ' o por ' : ' or via '}
             <a href="https://wa.me/50661132863" target="_blank" rel="noopener noreferrer" className="text-cyan hover:underline">WhatsApp</a>.
           </p>

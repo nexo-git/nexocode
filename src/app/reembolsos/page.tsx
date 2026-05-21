@@ -27,7 +27,7 @@ const sectionsEs = [
   {
     heading: 'Proceso de reclamo',
     content: [
-      '1. Contactar a nexo por WhatsApp (+506 6113-2863) o email (nexxo.courier@gmail.com) dentro del plazo establecido.',
+      '1. Contactar a nexo por WhatsApp (+506 6113-2863) o email (soporte@nexocourier.com) dentro del plazo establecido.',
       '2. Proporcionar: número de tracking, descripción del problema, fotografías del paquete y daño (si aplica), y valor del artículo.',
       '3. nexo iniciará una investigación interna con sus operadores logísticos en un plazo de 2 días hábiles.',
       '4. La resolución será comunicada dentro de los 5 días hábiles siguientes al inicio de la investigación.',
@@ -57,7 +57,7 @@ const sectionsEs = [
   },
   {
     heading: 'Disputas y chargebacks',
-    content: 'Si tiene una disputa con nexo, le pedimos contactarnos directamente primero a nexxo.courier@gmail.com o WhatsApp antes de iniciar una disputa con su banco o procesador de pagos. Nos comprometemos a responder en 24 horas hábiles. Las disputas iniciadas sin contacto previo con nexo pueden resultar en la suspensión del servicio.',
+    content: 'Si tiene una disputa con nexo, le pedimos contactarnos directamente primero a soporte@nexocourier.com o WhatsApp antes de iniciar una disputa con su banco o procesador de pagos. Nos comprometemos a responder en 24 horas hábiles. Las disputas iniciadas sin contacto previo con nexo pueden resultar en la suspensión del servicio.',
   },
   {
     heading: 'Modificaciones a esta política',
@@ -86,7 +86,7 @@ const sectionsEn = [
   {
     heading: 'Claim Process',
     content: [
-      '1. Contact nexo via WhatsApp (+506 6113-2863) or email (nexxo.courier@gmail.com) within the established timeframe.',
+      '1. Contact nexo via WhatsApp (+506 6113-2863) or email (soporte@nexocourier.com) within the established timeframe.',
       '2. Provide: tracking number, description of the issue, photos of the package and damage (if applicable), and item value.',
       '3. nexo will initiate an internal investigation with its logistics operators within 2 business days.',
       '4. Resolution will be communicated within 5 business days from the start of the investigation.',
@@ -116,7 +116,7 @@ const sectionsEn = [
   },
   {
     heading: 'Disputes and Chargebacks',
-    content: 'If you have a dispute with nexo, we ask that you contact us directly first at nexxo.courier@gmail.com or WhatsApp before initiating a dispute with your bank or payment processor. We commit to responding within 24 business hours. Disputes initiated without prior contact with nexo may result in service suspension.',
+    content: 'If you have a dispute with nexo, we ask that you contact us directly first at soporte@nexocourier.com or WhatsApp before initiating a dispute with your bank or payment processor. We commit to responding within 24 business hours. Disputes initiated without prior contact with nexo may result in service suspension.',
   },
   {
     heading: 'Policy Modifications',

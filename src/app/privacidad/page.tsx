@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sectionsEs = [
   {
     heading: 'Responsable del tratamiento',
-    content: 'NexoCode LLC, empresa constituida bajo las leyes del Estado de Nuevo México, Estados Unidos, es responsable del tratamiento de sus datos personales recopilados a través de nexocourier.com y los servicios asociados. Contacto: nexxo.courier@gmail.com.',
+    content: 'NexoCode LLC, empresa constituida bajo las leyes del Estado de Nuevo México, Estados Unidos, es responsable del tratamiento de sus datos personales recopilados a través de nexocourier.com y los servicios asociados. Contacto: soporte@nexocourier.com.',
   },
   {
     heading: 'Datos que recopilamos',
@@ -62,7 +62,7 @@ const sectionsEs = [
       'Eliminación: puede solicitar la eliminación de sus datos (sujeto a obligaciones legales).',
       'Portabilidad: puede solicitar sus datos en formato estructurado.',
       'Oposición: puede oponerse al tratamiento para fines de marketing.',
-      'Para ejercer estos derechos, escríbanos a nexxo.courier@gmail.com.',
+      'Para ejercer estos derechos, escríbanos a soporte@nexocourier.com.',
     ],
   },
   {
@@ -78,7 +78,7 @@ const sectionsEs = [
 const sectionsEn = [
   {
     heading: 'Data Controller',
-    content: 'NexoCode LLC, a company incorporated under the laws of the State of New Mexico, United States, is responsible for the processing of your personal data collected through nexocourier.com and associated services. Contact: nexxo.courier@gmail.com.',
+    content: 'NexoCode LLC, a company incorporated under the laws of the State of New Mexico, United States, is responsible for the processing of your personal data collected through nexocourier.com and associated services. Contact: soporte@nexocourier.com.',
   },
   {
     heading: 'Data We Collect',
@@ -131,7 +131,7 @@ const sectionsEn = [
       'Deletion: you can request deletion of your data (subject to legal obligations).',
       'Portability: you can request your data in a structured format.',
       'Objection: you can object to processing for marketing purposes.',
-      'To exercise these rights, write to us at nexxo.courier@gmail.com.',
+      'To exercise these rights, write to us at soporte@nexocourier.com.',
     ],
   },
   {

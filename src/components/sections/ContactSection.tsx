@@ -13,9 +13,9 @@ const contactItems = [
   {
     icon: Mail,
     label: 'Email',
-    value: 'nexxo.courier@gmail.com',
+    value: 'soporte@nexocourier.com',
     description: 'Para consultas que requieren documentación.',
-    cta: { label: 'Enviar email', href: 'mailto:nexxo.courier@gmail.com' },
+    cta: { label: 'Enviar email', href: 'mailto:soporte@nexocourier.com' },
   },
   {
     icon: Clock,

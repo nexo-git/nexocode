@@ -1,4 +1,4 @@
-import * as cdk from 'aws-cdk-lib'
+﻿import * as cdk from 'aws-cdk-lib'
 import * as cognito from 'aws-cdk-lib/aws-cognito'
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
@@ -7,13 +7,16 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 import * as budgets from 'aws-cdk-lib/aws-budgets'
 import * as cr from 'aws-cdk-lib/custom-resources'
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
+import * as kms from 'aws-cdk-lib/aws-kms'
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import { Construct } from 'constructs'
+import * as path from 'path'
 
 export class NexoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
-    // ─── Cognito User Pool ───────────────────────────────────────────
+    // â”€â”€â”€ Cognito User Pool â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const userPool = new cognito.UserPool(this, 'NexoUserPool', {
       userPoolName: 'nexo-users',
       selfSignUpEnabled: true,
@@ -38,8 +41,19 @@ export class NexoStack extends cdk.Stack {
         requireSymbols: false,
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      email: cognito.UserPoolEmail.withCognito(),
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     })
+
+    // KMS key asimÃ©trica para cifrar los cÃ³digos de verificaciÃ³n de Cognito
+    const emailSenderKey = new kms.Key(this, 'CognitoEmailSenderKey', {
+      description: 'Cognito custom email sender encryption key (symmetric)',
+    })
+    emailSenderKey.addToResourcePolicy(new iam.PolicyStatement({
+      principals: [new iam.ServicePrincipal('cognito-idp.amazonaws.com')],
+      actions: ['kms:Encrypt'],
+      resources: ['*'],
+    }))
 
     // App Client (para frontend)
     const userPoolClient = new cognito.UserPoolClient(this, 'NexoUserPoolClient', {
@@ -65,7 +79,7 @@ export class NexoStack extends cdk.Stack {
       description: 'Clientes de nexo',
     })
 
-    // ─── DynamoDB — Usuarios ─────────────────────────────────────────
+    // â”€â”€â”€ DynamoDB â€” Usuarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const usersTable = new dynamodb.Table(this, 'NexoUsersTable', {
       tableName: 'nexo-users',
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
@@ -78,7 +92,7 @@ export class NexoStack extends cdk.Stack {
       partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
     })
 
-    // ─── DynamoDB — Pedidos ──────────────────────────────────────────
+    // â”€â”€â”€ DynamoDB â€” Pedidos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const ordersTable = new dynamodb.Table(this, 'NexoOrdersTable', {
       tableName: 'nexo-orders',
       partitionKey: { name: 'orderId', type: dynamodb.AttributeType.STRING },
@@ -91,7 +105,7 @@ export class NexoStack extends cdk.Stack {
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
     })
 
-    // ─── DynamoDB — Direcciones ──────────────────────────────────────
+    // â”€â”€â”€ DynamoDB â€” Direcciones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const addressesTable = new dynamodb.Table(this, 'NexoAddressesTable', {
       tableName: 'nexo-addresses',
       partitionKey: { name: 'addressId', type: dynamodb.AttributeType.STRING },
@@ -104,7 +118,7 @@ export class NexoStack extends cdk.Stack {
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
     })
 
-    // ─── DynamoDB — Reseñas ─────────────────────────────────────────
+    // â”€â”€â”€ DynamoDB â€” ReseÃ±as â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const reviewsTable = new dynamodb.Table(this, 'NexoReviewsTable', {
       tableName: 'nexo-reviews',
       partitionKey: { name: 'reviewId', type: dynamodb.AttributeType.STRING },
@@ -117,7 +131,7 @@ export class NexoStack extends cdk.Stack {
       partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
     })
 
-    // ─── Lambda — Direcciones ────────────────────────────────────────
+    // â”€â”€â”€ Lambda â€” Direcciones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const addressesLambda = new lambda.Function(this, 'NexoAddressesLambda', {
       functionName: 'nexo-addresses-api',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -169,7 +183,7 @@ export class NexoStack extends cdk.Stack {
                 ExpressionAttributeValues: marshall({ ':uid': userId }),
               }))
               if ((existing.Count || 0) >= 2) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Máximo 2 direcciones permitidas.' }) }
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'MÃ¡ximo 2 direcciones permitidas.' }) }
               }
               const body = JSON.parse(event.body || '{}')
               if (!body.province || !body.canton || !body.district || !body.senas) {
@@ -239,7 +253,7 @@ export class NexoStack extends cdk.Stack {
                 ExpressionAttributeValues: marshall({ ':uid': userId }),
               }))
               if ((all.Count || 0) <= 1) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Debe mantener al menos una dirección.' }) }
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Debe mantener al menos una direcciÃ³n.' }) }
               }
               const target = (all.Items || []).map(i => unmarshall(i)).find(a => a.addressId === addressId)
               await dynamo.send(new DeleteItemCommand({ TableName: TABLE_NAME, Key: marshall({ addressId }) }))
@@ -273,7 +287,7 @@ export class NexoStack extends cdk.Stack {
 
     addressesTable.grantReadWriteData(addressesLambda)
 
-    // ─── Lambda — Admin CRUD usuarios ───────────────────────────────
+    // â”€â”€â”€ Lambda â€” Admin CRUD usuarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const adminLambda = new lambda.Function(this, 'NexoAdminLambda', {
       functionName: 'nexo-admin-users',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -342,7 +356,7 @@ export class NexoStack extends cdk.Stack {
     }))
     usersTable.grantReadWriteData(adminLambda)
 
-    // ─── Lambda — Pedidos ────────────────────────────────────────────
+    // â”€â”€â”€ Lambda â€” Pedidos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const ordersLambda = new lambda.Function(this, 'NexoOrdersLambda', {
       functionName: 'nexo-orders-api',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -350,9 +364,11 @@ export class NexoStack extends cdk.Stack {
       code: lambda.Code.fromInline(`
         const { DynamoDBClient, PutItemCommand, QueryCommand, ScanCommand, UpdateItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb')
         const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
+        const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda')
         const { randomUUID } = require('crypto')
 
         const dynamo = new DynamoDBClient({})
+        const lambdaClient = new LambdaClient({})
         const TABLE_NAME = process.env.TABLE_NAME
 
         exports.handler = async (event) => {
@@ -374,7 +390,7 @@ export class NexoStack extends cdk.Stack {
           const orderId = event.pathParameters?.orderId
 
           try {
-            // POST /orders — crear pedido (usuario autenticado)
+            // POST /orders â€” crear pedido (usuario autenticado)
             if (method === 'POST' && path === '/orders') {
               const body = JSON.parse(event.body || '{}')
               if (!body.trackingNumber) {
@@ -399,7 +415,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 201, headers, body: JSON.stringify(item) }
             }
 
-            // GET /orders — pedidos del usuario autenticado
+            // GET /orders â€” pedidos del usuario autenticado
             if (method === 'GET' && path === '/orders') {
               const result = await dynamo.send(new QueryCommand({
                 TableName: TABLE_NAME,
@@ -412,7 +428,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 200, headers, body: JSON.stringify(items) }
             }
 
-            // GET /admin/orders — todos los pedidos (solo admin)
+            // GET /admin/orders â€” todos los pedidos (solo admin)
             if (method === 'GET' && path === '/admin/orders') {
               if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
               const result = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME }))
@@ -421,7 +437,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 200, headers, body: JSON.stringify(items) }
             }
 
-            // POST /admin/orders — crear pedido en nombre de un usuario (solo admin)
+            // POST /admin/orders â€” crear pedido en nombre de un usuario (solo admin)
             if (method === 'POST' && path === '/admin/orders') {
               if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
               const body = JSON.parse(event.body || '{}')
@@ -443,7 +459,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 201, headers, body: JSON.stringify(item) }
             }
 
-            // DELETE /admin/orders/{orderId} — eliminar pedido (solo admin)
+            // DELETE /admin/orders/{orderId} â€” eliminar pedido (solo admin)
             if (method === 'DELETE' && orderId) {
               if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
               await dynamo.send(new DeleteItemCommand({
@@ -453,7 +469,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }
 
-            // PUT /admin/orders/{orderId} — actualizar pedido (solo admin)
+            // PUT /admin/orders/{orderId} â€” actualizar pedido (solo admin)
             if (method === 'PUT' && orderId) {
               if (!isAdmin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Acceso denegado' }) }
               const body = JSON.parse(event.body || '{}')
@@ -467,24 +483,66 @@ export class NexoStack extends cdk.Stack {
               }
               if (body.peso !== undefined) {
                 const peso = Number(body.peso)
-                if (isNaN(peso) || peso < 0 || peso > 500) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Peso inválido (0–500 kg).' }) }
+                if (isNaN(peso) || peso < 0 || peso > 500) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Peso invÃ¡lido (0â€“500 kg).' }) }
                 exprParts.push('peso = :p'); exprValues[':p'] = peso
               }
               if (body.totalPagado !== undefined) {
                 const total = Number(body.totalPagado)
-                if (isNaN(total) || total < 0 || total > 9999) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Total inválido.' }) }
+                if (isNaN(total) || total < 0 || total > 9999) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Total invÃ¡lido.' }) }
                 exprParts.push('totalPagado = :t'); exprValues[':t'] = total
                 console.log(JSON.stringify({ event: 'ORDER_AMOUNT_SET', orderId, totalPagado: total, by: callerId, at: now }))
               }
               if (body.trackingNumber !== undefined) { exprParts.push('trackingNumber = :tr'); exprValues[':tr'] = body.trackingNumber }
               if (body.description !== undefined) { exprParts.push('#d = :d'); exprNames['#d'] = 'description'; exprValues[':d'] = body.description }
-              await dynamo.send(new UpdateItemCommand({
+              const updateResult = await dynamo.send(new UpdateItemCommand({
                 TableName: TABLE_NAME,
                 Key: marshall({ orderId }),
                 UpdateExpression: 'SET ' + exprParts.join(', '),
                 ...(Object.keys(exprNames).length ? { ExpressionAttributeNames: exprNames } : {}),
                 ExpressionAttributeValues: marshall(exprValues),
+                ReturnValues: 'ALL_NEW',
               }))
+              if (body.status && updateResult.Attributes) {
+                const updated = unmarshall(updateResult.Attributes)
+                let discountPct = 0
+                let totalBase = updated.totalPagado || 0
+                let totalFinal = totalBase
+                if (body.status === 'bodega_cr' && updated.userEmail && totalBase) {
+                  try {
+                    const scanResult = await dynamo.send(new ScanCommand({
+                      TableName: TABLE_NAME,
+                      FilterExpression: 'userEmail = :e AND #st IN (:s1, :s2, :s3)',
+                      ExpressionAttributeNames: { '#st': 'status' },
+                      ExpressionAttributeValues: marshall({ ':e': updated.userEmail, ':s1': 'bodega_cr', ':s2': 'pagado_en_ruta', ':s3': 'entregado' }),
+                      ProjectionExpression: 'peso',
+                    }))
+                    const totalKg = (scanResult.Items || []).map(i => unmarshall(i).peso || 0).reduce((a, b) => a + b, 0)
+                    if (totalKg >= 50) discountPct = 7
+                    else if (totalKg >= 25) discountPct = 5
+                    else if (totalKg >= 10) discountPct = 3
+                    totalFinal = Math.round(totalBase * (1 - discountPct / 100) * 100) / 100
+                  } catch (e) {
+                    console.error(JSON.stringify({ event: 'LOYALTY_CALC_ERROR', error: e.message }))
+                  }
+                  await dynamo.send(new UpdateItemCommand({
+                    TableName: TABLE_NAME,
+                    Key: marshall({ orderId }),
+                    UpdateExpression: 'SET totalBase = :tb, discountPct = :dp, totalFinal = :tf',
+                    ExpressionAttributeValues: marshall({ ':tb': totalBase, ':dp': discountPct, ':tf': totalFinal }),
+                  }))
+                }
+                lambdaClient.send(new InvokeCommand({
+                  FunctionName: process.env.EMAIL_FUNCTION_NAME,
+                  InvocationType: 'Event',
+                  Payload: Buffer.from(JSON.stringify({
+                    type: 'STATUS_CHANGE',
+                    to: updated.userEmail,
+                    data: { userName: updated.userName, trackingNumber: updated.trackingNumber, status: body.status, peso: updated.peso, totalBase, discountPct, totalFinal },
+                  })),
+                })).catch(err => {
+                  console.error(JSON.stringify({ event: 'EMAIL_INVOKE_ERROR', error: err.message, orderId }))
+                })
+              }
               return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }
 
@@ -497,13 +555,14 @@ export class NexoStack extends cdk.Stack {
       environment: {
         TABLE_NAME: ordersTable.tableName,
         CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        EMAIL_FUNCTION_NAME: 'nexo-email-service',
       },
       timeout: cdk.Duration.seconds(15),
     })
 
     ordersTable.grantReadWriteData(ordersLambda)
 
-    // ─── Lambda — Reseñas ────────────────────────────────────────────
+    // â”€â”€â”€ Lambda â€” ReseÃ±as â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const reviewsLambda = new lambda.Function(this, 'NexoReviewsLambda', {
       functionName: 'nexo-reviews-api',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -530,7 +589,7 @@ export class NexoStack extends cdk.Stack {
           const method = event.httpMethod
 
           try {
-            // GET /reviews — público, sin auth
+            // GET /reviews â€” pÃºblico, sin auth
             if (method === 'GET') {
               const result = await dynamo.send(new ScanCommand({ TableName: REVIEWS_TABLE }))
               const items = (result.Items || []).map(i => unmarshall(i))
@@ -538,7 +597,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 200, headers, body: JSON.stringify(items) }
             }
 
-            // POST /reviews — requiere auth, valida pedido entregado
+            // POST /reviews â€” requiere auth, valida pedido entregado
             if (method === 'POST') {
               const claims = event.requestContext?.authorizer?.claims || {}
               const userId = claims.sub
@@ -563,10 +622,10 @@ export class NexoStack extends cdk.Stack {
                 ExpressionAttributeValues: marshall({ ':uid': userId, ':entregado': 'entregado' }),
               }))
               if (!ordersResult.Count || ordersResult.Count === 0) {
-                return { statusCode: 403, headers, body: JSON.stringify({ error: 'Necesitás al menos un pedido entregado para dejar una reseña.' }) }
+                return { statusCode: 403, headers, body: JSON.stringify({ error: 'NecesitÃ¡s al menos un pedido entregado para dejar una reseÃ±a.' }) }
               }
 
-              // Verificar que el usuario no haya ya dejado reseña
+              // Verificar que el usuario no haya ya dejado reseÃ±a
               const existing = await dynamo.send(new QueryCommand({
                 TableName: REVIEWS_TABLE,
                 IndexName: 'userId-index',
@@ -574,7 +633,7 @@ export class NexoStack extends cdk.Stack {
                 ExpressionAttributeValues: marshall({ ':uid': userId }),
               }))
               if (existing.Count && existing.Count > 0) {
-                return { statusCode: 409, headers, body: JSON.stringify({ error: 'Ya dejaste una reseña anteriormente.' }) }
+                return { statusCode: 409, headers, body: JSON.stringify({ error: 'Ya dejaste una reseÃ±a anteriormente.' }) }
               }
 
               const userName = claims.given_name || claims.email?.split('@')[0] || 'Usuario'
@@ -590,7 +649,7 @@ export class NexoStack extends cdk.Stack {
               return { statusCode: 201, headers, body: JSON.stringify(item) }
             }
 
-            // DELETE /admin/reviews/{reviewId} — solo admin
+            // DELETE /admin/reviews/{reviewId} â€” solo admin
             if (method === 'DELETE') {
               const claims = event.requestContext?.authorizer?.claims || {}
               const groups = claims['cognito:groups'] || ''
@@ -623,7 +682,7 @@ export class NexoStack extends cdk.Stack {
     reviewsTable.grantReadWriteData(reviewsLambda)
     ordersTable.grantReadData(reviewsLambda)
 
-    // ─── Seed de reseñas iniciales ───────────────────────────────────
+    // â”€â”€â”€ Seed de reseÃ±as iniciales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const seedDate1 = '2025-11-15T14:23:00.000Z'
     const seedDate2 = '2025-12-03T09:10:00.000Z'
     const seedDate3 = '2026-01-20T16:45:00.000Z'
@@ -635,9 +694,9 @@ export class NexoStack extends cdk.Stack {
         parameters: {
           RequestItems: {
             'nexo-reviews': [
-              { PutRequest: { Item: { reviewId: { S: 'seed-001' }, userId: { S: 'seed' }, userName: { S: 'Ana Rodríguez' }, rating: { N: '5' }, comment: { S: '¡Increíble servicio! Mi paquete llegó en 5 días y en perfectas condiciones. Definitivamente volvería a usar Nexo.' }, createdAt: { S: seedDate1 } } } },
-              { PutRequest: { Item: { reviewId: { S: 'seed-002' }, userId: { S: 'seed' }, userName: { S: 'Carlos Jiménez' }, rating: { N: '5' }, comment: { S: 'Super rápido y confiable. Ya llevo 3 pedidos con Nexo y siempre excelente. El seguimiento en tiempo real es muy útil.' }, createdAt: { S: seedDate2 } } } },
-              { PutRequest: { Item: { reviewId: { S: 'seed-003' }, userId: { S: 'seed' }, userName: { S: 'María González' }, rating: { N: '5' }, comment: { S: 'Muy buena experiencia. Precios justos y atención al cliente excelente cuando tuve una consulta.' }, createdAt: { S: seedDate3 } } } },
+              { PutRequest: { Item: { reviewId: { S: 'seed-001' }, userId: { S: 'seed' }, userName: { S: 'Ana RodrÃ­guez' }, rating: { N: '5' }, comment: { S: 'Â¡IncreÃ­ble servicio! Mi paquete llegÃ³ en 5 dÃ­as y en perfectas condiciones. Definitivamente volverÃ­a a usar Nexo.' }, createdAt: { S: seedDate1 } } } },
+              { PutRequest: { Item: { reviewId: { S: 'seed-002' }, userId: { S: 'seed' }, userName: { S: 'Carlos JimÃ©nez' }, rating: { N: '5' }, comment: { S: 'Super rÃ¡pido y confiable. Ya llevo 3 pedidos con Nexo y siempre excelente. El seguimiento en tiempo real es muy Ãºtil.' }, createdAt: { S: seedDate2 } } } },
+              { PutRequest: { Item: { reviewId: { S: 'seed-003' }, userId: { S: 'seed' }, userName: { S: 'MarÃ­a GonzÃ¡lez' }, rating: { N: '5' }, comment: { S: 'Muy buena experiencia. Precios justos y atenciÃ³n al cliente excelente cuando tuve una consulta.' }, createdAt: { S: seedDate3 } } } },
             ],
           },
         },
@@ -646,8 +705,8 @@ export class NexoStack extends cdk.Stack {
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [reviewsTable.tableArn] }),
     })
 
-    // ─── Secrets Manager — Stripe ────────────────────────────────────
-    // TODO: Stripe — actualizar manualmente en AWS Secrets Manager con secretKey y webhookSecret reales
+    // â”€â”€â”€ Secrets Manager â€” Stripe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // TODO: Stripe â€” actualizar manualmente en AWS Secrets Manager con secretKey y webhookSecret reales
     const stripeSecret = new secretsmanager.Secret(this, 'StripeSecret', {
       secretName: 'nexo/stripe',
       description: 'Stripe: secretKey y webhookSecret. Actualizar manualmente desde consola AWS.',
@@ -657,8 +716,271 @@ export class NexoStack extends cdk.Stack {
       })),
     })
 
-    // ─── Lambda — Pagos: crear sesión de cobro ───────────────────────
-    // TODO: Stripe — crear PaymentIntent y retornar URL de checkout (Payment Links o Checkout Session)
+    // â”€â”€â”€ Secrets Manager â€” Resend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const resendSecret = secretsmanager.Secret.fromSecretNameV2(
+      this, 'ResendSecret', 'nexo/resend'
+    )
+
+    // â”€â”€â”€ Lambda â€” Email Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const emailLambda = new lambda.Function(this, 'NexoEmailLambda', {
+      functionName: 'nexo-email-service',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(15),
+      environment: {
+        RESEND_SECRET_ARN: resendSecret.secretArn,
+      },
+      code: lambda.Code.fromInline(`
+        const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager')
+        const secrets = new SecretsManagerClient({})
+        let cachedResendKey = null
+
+        async function getResendApiKey() {
+          if (cachedResendKey) return cachedResendKey
+          const r = await secrets.send(new GetSecretValueCommand({ SecretId: process.env.RESEND_SECRET_ARN }))
+          cachedResendKey = JSON.parse(r.SecretString).apiKey
+          return cachedResendKey
+        }
+
+        const STATUS_CONFIG = {
+          en_ruta:         { emoji: '\\u2708\\uFE0F',  titulo: '\\u00A1Tu pedido est\\u00E1 en camino!',               badge: 'EN RUTA',          color: '#00D4FF', mensaje: 'Tu paquete sali\\u00F3 de nuestras bodegas en Estados Unidos y est\\u00E1 en camino a Costa Rica. Te avisamos en cada paso del proceso.' },
+          atascado_aduana: { emoji: '\\uD83D\\uDEC3',  titulo: 'Tu pedido est\\u00E1 en tr\\u00E1mite aduanero',        badge: 'EN ADUANA',        color: '#F59E0B', mensaje: 'Tu paquete lleg\\u00F3 a Costa Rica y est\\u00E1 siendo procesado por la Aduana. Este proceso puede tardar unos d\\u00EDas. Te avisamos en cuanto salga.' },
+          bodega_cr:       { emoji: '\\uD83C\\uDFED',  titulo: '\\u00A1Tu pedido lleg\\u00F3 a nuestra bodega en CR!',  badge: 'BODEGA CR \\u00B7 PAGAR',        color: '#8B5CF6', mensaje: 'Tu paquete ya sali\\u00F3 de Aduana y est\\u00E1 en nuestra bodega en Costa Rica. Para que podamos despacharlo, realiz\\u00E1 el pago correspondiente desde tu cuenta.' },
+          pendiente_pago:  { emoji: '\\uD83D\\uDCB3',  titulo: 'Ten\\u00E9s un saldo pendiente',                        badge: 'PAGO PENDIENTE',   color: '#EF4444', mensaje: 'Para continuar con la entrega hay un cobro pendiente. Ingres\\u00E1 a tu cuenta para ver el detalle y realizar el pago.' },
+          pagado_en_ruta:  { emoji: '\\uD83D\\uDE9A',  titulo: '\\u00A1Pago recibido! Tu pedido est\\u00E1 en camino',  badge: 'PAGADO \\u2014 EN RUTA', color: '#10B981', mensaje: 'Confirmamos tu pago. Tu paquete est\\u00E1 listo para ser entregado. Te contactamos pronto para coordinar el horario.' },
+          entregado:       { emoji: '\\uD83D\\uDCE6',  titulo: '\\u00A1Tu pedido fue entregado!',                       badge: 'ENTREGADO',        color: '#00D4FF', mensaje: '\\u00A1Tu paquete fue entregado! Gracias por confiar en nexo. Si quer\\u00E9s dejar una rese\\u00F1a, nos ayuda un mont\\u00F3n.' },
+        }
+
+        function buildEmailHtml(userName, trackingNumber, status, peso, totalBase, discountPct, totalFinal) {
+          const cfg = STATUS_CONFIG[status]
+          if (!cfg) return null
+          const firstName = (userName || '').split(' ')[0] || 'cliente'
+          const showPayCard = status === 'bodega_cr' && peso != null && totalFinal != null && totalFinal > 0
+          const hasDiscount = showPayCard && discountPct > 0
+          return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+            + '<body style="margin:0;padding:0;background:#F4F7FC;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FC;padding:32px 16px;"><tr><td align="center">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">'
+            + '<tr><td style="background:#0A0E1A;border-radius:12px 12px 0 0;padding:28px 32px;text-align:center;">'
+            + '<div style="font-size:26px;font-weight:800;"><span style="color:#00D4FF;">nexo</span><span style="color:#fff;">courier</span></div>'
+            + '<div style="color:#8899AA;font-size:12px;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">USA \\u2192 Costa Rica</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;padding:0 32px 24px;text-align:center;">'
+            + '<span style="display:inline-block;background:' + cfg.color + '20;color:' + cfg.color + ';font-size:11px;font-weight:700;letter-spacing:1.5px;padding:6px 16px;border-radius:100px;border:1px solid ' + cfg.color + '40;">' + cfg.badge + '</span>'
+            + '</td></tr>'
+            + '<tr><td style="background:#fff;padding:36px 32px;">'
+            + '<div style="text-align:center;margin-bottom:24px;">'
+            + '<div style="font-size:48px;line-height:1;margin-bottom:16px;">' + cfg.emoji + '</div>'
+            + '<h1 style="margin:0;color:#0A0E1A;font-size:22px;font-weight:700;line-height:1.3;">' + cfg.titulo + '</h1>'
+            + '</div>'
+            + '<p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 12px;">Hola <strong>' + firstName + '</strong>,</p>'
+            + '<p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">' + cfg.mensaje + '</p>'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FC;border-radius:8px;margin-bottom:' + (showPayCard ? '16' : '28') + 'px;">'
+            + '<tr><td style="padding:16px 20px;">'
+            + '<div style="color:#6B7280;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">N\\u00FAmero de seguimiento</div>'
+            + '<div style="color:#0A0E1A;font-size:18px;font-weight:700;font-family:Courier New,Courier,monospace;letter-spacing:1px;">' + trackingNumber + '</div>'
+            + '</td></tr></table>'
+            + (showPayCard
+              ? '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F3FF;border:1px solid #8B5CF630;border-radius:8px;margin-bottom:28px;">'
+                + '<tr><td style="padding:16px 20px;">'
+                + '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
+                + '<td style="vertical-align:top;padding-right:16px;">'
+                + '<div style="color:#7C3AED;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Peso</div>'
+                + '<div style="color:#0A0E1A;font-size:16px;font-weight:700;">' + peso + ' kg</div>'
+                + '</td>'
+                + '<td style="vertical-align:top;text-align:right;">'
+                + '<div style="color:#7C3AED;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Total a pagar</div>'
+                + (hasDiscount ? '<div style="color:#9CA3AF;font-size:14px;font-weight:400;text-decoration:line-through;margin-bottom:2px;">$' + totalBase.toFixed(2) + '</div>' : '')
+                + (hasDiscount ? '<div style="display:inline-block;background:#8B5CF620;color:#7C3AED;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:100px;border:1px solid #8B5CF640;margin-bottom:4px;">Nexo Fiel ' + discountPct + '%</div><br>' : '')
+                + '<div style="color:#059669;font-size:20px;font-weight:800;">$' + totalFinal.toFixed(2) + '</div>'
+                + '</td>'
+                + '</tr></table>'
+                + '</td></tr></table>'
+              : '')
+            + '<div style="text-align:center;">'
+            + '<a href="https://www.nexocourier.com/pedidos" style="display:inline-block;background:#00D4FF;color:#0A0E1A;font-weight:700;font-size:14px;text-decoration:none;padding:14px 32px;border-radius:8px;">Ver mis pedidos \\u2192</a>'
+            + '</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;border-radius:0 0 12px 12px;padding:20px 32px;text-align:center;">'
+            + '<p style="color:#4B5563;font-size:12px;margin:0 0 6px;">Notificaci\\u00F3n autom\\u00E1tica del pedido <strong style="color:#6B7280;">' + trackingNumber + '</strong></p>'
+            + '<p style="margin:0;font-size:12px;"><span style="color:#00D4FF;font-weight:700;">nexo</span><span style="color:#6B7280;">courier</span> \\u00B7 <a href="https://www.nexocourier.com" style="color:#6B7280;text-decoration:none;">nexocourier.com</a></p>'
+            + '</td></tr>'
+            + '</table></td></tr></table>'
+            + '</body></html>'
+        }
+
+        function buildWelcomeHtml(firstName) {
+          return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+            + '<body style="margin:0;padding:0;background:#F4F7FC;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FC;padding:32px 16px;"><tr><td align="center">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">'
+            + '<tr><td style="background:#0A0E1A;border-radius:12px 12px 0 0;padding:28px 32px;text-align:center;">'
+            + '<div style="font-size:26px;font-weight:800;"><span style="color:#00D4FF;">nexo</span><span style="color:#fff;">courier</span></div>'
+            + '<div style="color:#8899AA;font-size:12px;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">USA \\u2192 Costa Rica</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;padding:0 32px 24px;text-align:center;">'
+            + '<span style="display:inline-block;background:#00D4FF20;color:#00D4FF;font-size:11px;font-weight:700;letter-spacing:1.5px;padding:6px 16px;border-radius:100px;border:1px solid #00D4FF40;">BIENVENID@</span>'
+            + '</td></tr>'
+            + '<tr><td style="background:#fff;padding:36px 32px;">'
+            + '<div style="text-align:center;margin-bottom:24px;">'
+            + '<div style="font-size:48px;line-height:1;margin-bottom:16px;">\\uD83C\\uDF1F</div>'
+            + '<h1 style="margin:0;color:#0A0E1A;font-size:22px;font-weight:700;line-height:1.3;">\\u00A1Ya sos parte de nexo!</h1>'
+            + '</div>'
+            + '<p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 12px;">Hola <strong>' + firstName + '</strong>,</p>'
+            + '<p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">Tu cuenta est\\u00E1 lista. Desde aqu\\u00ED pod\\u00E9s rastrear tus paquetes, ver el estado de tus pedidos y coordinar entregas \\u2014 todo en un solo lugar.</p>'
+            + '<div style="text-align:center;">'
+            + '<a href="https://www.nexocourier.com/cuenta" style="display:inline-block;background:#00D4FF;color:#0A0E1A;font-weight:700;font-size:14px;text-decoration:none;padding:14px 32px;border-radius:8px;">Ver mi cuenta \\u2192</a>'
+            + '</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;border-radius:0 0 12px 12px;padding:20px 32px;text-align:center;">'
+            + '<p style="color:#4B5563;font-size:12px;margin:0 0 6px;">Recib\\u00EDs este mensaje porque acabas de crear tu cuenta en nexo Courier.</p>'
+            + '<p style="margin:0;font-size:12px;"><span style="color:#00D4FF;font-weight:700;">nexo</span><span style="color:#6B7280;">courier</span> \\u00B7 <a href="https://www.nexocourier.com" style="color:#6B7280;text-decoration:none;">nexocourier.com</a></p>'
+            + '</td></tr>'
+            + '</table></td></tr></table>'
+            + '</body></html>'
+        }
+
+        exports.handler = async (event) => {
+          const { type, to, data } = event
+
+          if (type === 'STATUS_CHANGE') {
+            const { userName, trackingNumber, status } = data
+            if (!to) {
+              console.log(JSON.stringify({ event: 'EMAIL_SKIP', reason: 'no_email', trackingNumber, status }))
+              return { success: false, reason: 'no_email' }
+            }
+            const html = buildEmailHtml(userName, trackingNumber, status, data.peso, data.totalBase, data.discountPct || 0, data.totalFinal)
+            if (!html) {
+              console.log(JSON.stringify({ event: 'EMAIL_SKIP', reason: 'unknown_status', status }))
+              return { success: false, reason: 'unknown_status' }
+            }
+            const cfg = STATUS_CONFIG[status]
+            const apiKey = await getResendApiKey()
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'nexo <notificaciones@nexocourier.com>',
+                to: [to],
+                subject: cfg.emoji + ' ' + cfg.titulo + ' \\u2014 Nexo Courier',
+                html,
+              }),
+            })
+            const result = await res.json()
+            if (!res.ok) {
+              console.error(JSON.stringify({ event: 'EMAIL_ERROR', status: res.status, error: result, to, trackingNumber }))
+              return { success: false, error: result }
+            }
+            console.log(JSON.stringify({ event: 'EMAIL_SENT', emailId: result.id, to, trackingNumber, status }))
+            return { success: true, emailId: result.id }
+          }
+
+          if (type === 'WELCOME') {
+            const { userName } = data
+            if (!to) return { success: false, reason: 'no_email' }
+            const firstName = (userName || '').split(' ')[0] || 'cliente'
+            const html = buildWelcomeHtml(firstName)
+            const apiKey = await getResendApiKey()
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'nexo <notificaciones@nexocourier.com>',
+                to: [to],
+                subject: '\\u00A1Bienvenid@ a nexo Courier!',
+                html,
+              }),
+            })
+            const result = await res.json()
+            if (!res.ok) {
+              console.error(JSON.stringify({ event: 'EMAIL_ERROR', type: 'WELCOME', error: result, to }))
+              return { success: false, error: result }
+            }
+            console.log(JSON.stringify({ event: 'EMAIL_SENT', type: 'WELCOME', emailId: result.id, to }))
+            return { success: true, emailId: result.id }
+          }
+
+          console.warn(JSON.stringify({ event: 'EMAIL_UNKNOWN_TYPE', type }))
+          return { success: false, reason: 'unknown_type' }
+        }
+      `),
+    })
+
+    resendSecret.grantRead(emailLambda)
+    emailLambda.grantInvoke(ordersLambda)
+
+    // â”€â”€â”€ Lambda â€” Cognito: PostConfirmation (email de bienvenida) â”€â”€â”€â”€
+    const cognitoHooksLambda = new lambda.Function(this, 'NexoCognitoHooksLambda', {
+      functionName: 'nexo-cognito-hooks',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        EMAIL_FUNCTION_NAME: 'nexo-email-service',
+      },
+      code: lambda.Code.fromInline(`
+        const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda')
+        const lambdaClient = new LambdaClient({})
+
+        exports.handler = async (event) => {
+          if (event.triggerSource === 'PostConfirmation_ConfirmSignUp') {
+            const { email, name, given_name } = event.request.userAttributes
+            const userName = name || given_name || email.split('@')[0]
+            try {
+              await lambdaClient.send(new InvokeCommand({
+                FunctionName: process.env.EMAIL_FUNCTION_NAME,
+                InvocationType: 'Event',
+                Payload: Buffer.from(JSON.stringify({
+                  type: 'WELCOME',
+                  to: email,
+                  data: { userName },
+                })),
+              }))
+            } catch (err) {
+              console.error(JSON.stringify({ event: 'WELCOME_INVOKE_ERROR', error: err.message, email }))
+            }
+          }
+          return event
+        }
+      `),
+    })
+
+    emailLambda.grantInvoke(cognitoHooksLambda)
+
+    // â”€â”€â”€ Lambda â€” Cognito: CustomEmailSender (verificaciÃ³n y recovery via Resend) â”€â”€â”€â”€
+    const customEmailSenderLambda = new NodejsFunction(this, 'NexoCustomEmailSenderLambda', {
+      functionName: 'nexo-cognito-custom-email-sender',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      timeout: cdk.Duration.seconds(10),
+      entry: path.join(__dirname, 'lambdas/custom-email-sender/index.ts'),
+      bundling: {
+        externalModules: ['@aws-sdk/*'],
+      },
+      environment: {
+        RESEND_SECRET_ARN: resendSecret.secretArn,
+      },
+    })
+
+    emailSenderKey.grantDecrypt(customEmailSenderLambda)
+    resendSecret.grantRead(customEmailSenderLambda)
+    customEmailSenderLambda.addPermission('CognitoInvoke', {
+      principal: new iam.ServicePrincipal('cognito-idp.amazonaws.com'),
+    })
+
+    // Wiring de triggers al User Pool
+    userPool.addTrigger(cognito.UserPoolOperation.POST_CONFIRMATION, cognitoHooksLambda)
+
+    // L1 escape hatch â€” customEmailSender no estÃ¡ expuesto en L2 de CDK
+    const cfnPool = userPool.node.defaultChild as cognito.CfnUserPool
+    cfnPool.addPropertyOverride('LambdaConfig.CustomEmailSender', {
+      LambdaArn: customEmailSenderLambda.functionArn,
+      LambdaVersion: 'V1_0',
+    })
+    cfnPool.addPropertyOverride('LambdaConfig.KMSKeyID', emailSenderKey.keyArn)
+
+    // â”€â”€â”€ Lambda â€” Pagos: crear sesiÃ³n de cobro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // TODO: Stripe â€” crear PaymentIntent y retornar URL de checkout (Payment Links o Checkout Session)
     const paymentCreateLambda = new lambda.Function(this, 'NexoPaymentCreateLambda', {
       functionName: 'nexo-payment-create',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -674,7 +996,7 @@ export class NexoStack extends cdk.Stack {
             'Access-Control-Allow-Headers': 'Authorization,Content-Type',
             'Vary': 'Origin'
           }
-          return { statusCode: 503, headers, body: JSON.stringify({ error: 'Pagos no disponibles aún.' }) }
+          return { statusCode: 503, headers, body: JSON.stringify({ error: 'Pagos no disponibles aÃºn.' }) }
         }
       `),
       environment: {
@@ -686,8 +1008,8 @@ export class NexoStack extends cdk.Stack {
     ordersTable.grantReadData(paymentCreateLambda)
     stripeSecret.grantRead(paymentCreateLambda)
 
-    // ─── Lambda — Pagos: webhook de Stripe ──────────────────────────
-    // TODO: Stripe — validar firma con stripe.webhooks.constructEvent y actualizar pedido a pagado_en_ruta
+    // â”€â”€â”€ Lambda â€” Pagos: webhook de Stripe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // TODO: Stripe â€” validar firma con stripe.webhooks.constructEvent y actualizar pedido a pagado_en_ruta
     const paymentWebhookLambda = new lambda.Function(this, 'NexoPaymentWebhookLambda', {
       functionName: 'nexo-payment-webhook',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -707,7 +1029,7 @@ export class NexoStack extends cdk.Stack {
     ordersTable.grantReadWriteData(paymentWebhookLambda)
     stripeSecret.grantRead(paymentWebhookLambda)
 
-    // ─── API Gateway ─────────────────────────────────────────────────
+    // â”€â”€â”€ API Gateway â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const api = new apigateway.RestApi(this, 'NexoAdminApi', {
       restApiName: 'nexo-admin-api',
       defaultCorsPreflightOptions: {
@@ -728,7 +1050,7 @@ export class NexoStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.COGNITO,
     }
 
-    // Rutas /admin/users (sin auth por ahora — acceso interno)
+    // Rutas /admin/users (sin auth por ahora â€” acceso interno)
     const adminResource = api.root.addResource('admin')
     const usersResource = adminResource.addResource('users')
     const userResource = usersResource.addResource('{userId}')
@@ -753,20 +1075,20 @@ export class NexoStack extends cdk.Stack {
     adminOrderResource.addMethod('PUT', ordersIntegration, authOptions)
     adminOrderResource.addMethod('DELETE', ordersIntegration, authOptions)
 
-    // Rutas /reviews — GET público, POST con auth
+    // Rutas /reviews â€” GET pÃºblico, POST con auth
     const reviewsIntegration = new apigateway.LambdaIntegration(reviewsLambda)
     const reviewsResource = api.root.addResource('reviews')
     reviewsResource.addMethod('GET', reviewsIntegration)
     reviewsResource.addMethod('POST', reviewsIntegration, authOptions)
 
-    // Rutas /payments — crear sesión (auth) y webhook (público)
+    // Rutas /payments â€” crear sesiÃ³n (auth) y webhook (pÃºblico)
     const paymentsResource = api.root.addResource('payments')
     const paymentCreateResource = paymentsResource.addResource('create')
     const paymentWebhookResource = paymentsResource.addResource('webhook')
     paymentCreateResource.addMethod('POST', new apigateway.LambdaIntegration(paymentCreateLambda), authOptions)
     paymentWebhookResource.addMethod('POST', new apigateway.LambdaIntegration(paymentWebhookLambda))
 
-    // Ruta /admin/reviews/{reviewId} — DELETE admin
+    // Ruta /admin/reviews/{reviewId} â€” DELETE admin
     const adminReviewsResource = adminResource.addResource('reviews')
     const adminReviewResource = adminReviewsResource.addResource('{reviewId}')
     adminReviewResource.addMethod('DELETE', reviewsIntegration, authOptions)
@@ -780,7 +1102,7 @@ export class NexoStack extends cdk.Stack {
     addressResource.addMethod('PUT', addressesIntegration, authOptions)
     addressResource.addMethod('DELETE', addressesIntegration, authOptions)
 
-    // ─── Budget Alert ────────────────────────────────────────────────
+    // â”€â”€â”€ Budget Alert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     new budgets.CfnBudget(this, 'NexoBudget', {
       budget: {
         budgetName: 'nexo-monthly-limit',
@@ -810,7 +1132,7 @@ export class NexoStack extends cdk.Stack {
       ],
     })
 
-    // ─── Outputs ─────────────────────────────────────────────────────
+    // â”€â”€â”€ Outputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId })
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId })
     new cdk.CfnOutput(this, 'ApiUrl', { value: api.url })
