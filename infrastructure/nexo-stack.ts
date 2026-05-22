@@ -531,17 +531,21 @@ export class NexoStack extends cdk.Stack {
                     ExpressionAttributeValues: marshall({ ':tb': totalBase, ':dp': discountPct, ':tf': totalFinal }),
                   }))
                 }
-                lambdaClient.send(new InvokeCommand({
-                  FunctionName: process.env.EMAIL_FUNCTION_NAME,
-                  InvocationType: 'Event',
-                  Payload: Buffer.from(JSON.stringify({
-                    type: 'STATUS_CHANGE',
-                    to: updated.userEmail,
-                    data: { userName: updated.userName, trackingNumber: updated.trackingNumber, status: body.status, peso: updated.peso, totalBase, discountPct, totalFinal },
-                  })),
-                })).catch(err => {
+                console.log(JSON.stringify({ event: 'EMAIL_INVOKE_START', to: updated.userEmail, status: body.status, orderId }))
+                try {
+                  await lambdaClient.send(new InvokeCommand({
+                    FunctionName: process.env.EMAIL_FUNCTION_NAME,
+                    InvocationType: 'RequestResponse',
+                    Payload: Buffer.from(JSON.stringify({
+                      type: 'STATUS_CHANGE',
+                      to: updated.userEmail,
+                      data: { userName: updated.userName, trackingNumber: updated.trackingNumber, status: body.status, peso: updated.peso, totalBase, discountPct, totalFinal },
+                    })),
+                  }))
+                  console.log(JSON.stringify({ event: 'EMAIL_INVOKE_OK', orderId, status: body.status }))
+                } catch (err) {
                   console.error(JSON.stringify({ event: 'EMAIL_INVOKE_ERROR', error: err.message, orderId }))
-                })
+                }
               }
               return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
             }
