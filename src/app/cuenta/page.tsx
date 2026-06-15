@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Save, Trash2 } from 'lucide-react'
-import { getCurrentUser, updateCurrentUser, deleteCurrentUser, logoutUser } from '@/lib/casillero'
+import { updateCurrentUser, deleteCurrentUser, logoutUser } from '@/lib/casillero'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import Button from '@/components/ui/Button'
 import type { NexoUser } from '@/types/casillero'
 
@@ -25,8 +26,7 @@ const errorClass  = 'text-xs text-status-red mt-1'
 
 export default function CuentaPage() {
   const router = useRouter()
-  const [user, setUser] = useState<NexoUser | null>(null)
-  const [ready, setReady] = useState(false)
+  const { user, ready } = useCurrentUser()
   const [saveOk, setSaveOk] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -37,13 +37,8 @@ export default function CuentaPage() {
   })
 
   useEffect(() => {
-    getCurrentUser().then((u) => {
-      if (!u) { router.replace('/login'); return }
-      setUser(u)
-      reset({ nombre: u.nombre, apellido: u.apellido, movil: u.movil, telefono: u.telefono })
-      setReady(true)
-    })
-  }, [router, reset])
+    if (user) reset({ nombre: user.nombre, apellido: user.apellido, movil: user.movil, telefono: user.telefono })
+  }, [user, reset])
 
   const onSubmit = async (data: FormData) => {
     setSaveOk(false)

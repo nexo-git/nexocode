@@ -75,7 +75,7 @@
       {\textcolor{nexoCyan}{nexo} \textcolor{nexoSlate}{---}\ Infraestructura Backend};
     \node[anchor=east, text=nexoSlate, font=\small]
       at ([xshift=-2.5cm, yshift=-0.55cm]current page.north east)
-      {Documento Interno · v2.0};
+      {Documento Interno · v3.0};
   \end{tikzpicture}%
 }
 \fancyfoot[C]{\small\textcolor{nexoSlate}{\thepage}}
@@ -128,8 +128,8 @@
     \textcolor{nexoSlate}{Proveedor}\quad\textcolor{white}{Amazon Web Services (AWS)} \\[0.5em]
     \textcolor{nexoSlate}{Cuenta AWS}\quad\textcolor{white}{nexo-prod (769953010359)} \\[0.5em]
     \textcolor{nexoSlate}{Región}\quad\textcolor{white}{us-east-1} \\[0.5em]
-    \textcolor{nexoSlate}{Versión}\quad\textcolor{white}{2.0} \\[0.5em]
-    \textcolor{nexoSlate}{Fecha}\quad\textcolor{white}{Abril 2026}
+    \textcolor{nexoSlate}{Versión}\quad\textcolor{white}{3.0} \\[0.5em]
+    \textcolor{nexoSlate}{Fecha}\quad\textcolor{white}{Mayo 2026}
   }
 
   \vfill
@@ -153,9 +153,10 @@ propios que mantener. Toda la infraestructura está definida como código con
 
 \vspace{0.5em}
 El sistema maneja autenticación de usuarios mediante \textbf{AWS Cognito}, almacena
-perfiles en \textbf{DynamoDB nexo-users}, pedidos en \textbf{DynamoDB nexo-orders}
-y direcciones de entrega en \textbf{DynamoDB nexo-addresses}, y expone un API
-protegido a través de \textbf{Lambda + API Gateway} con autorizador Cognito.
+perfiles en \textbf{DynamoDB nexo-users}, pedidos en \textbf{DynamoDB nexo-orders},
+direcciones de entrega en \textbf{DynamoDB nexo-addresses} y reseñas de clientes en
+\textbf{DynamoDB nexo-reviews}, y expone un API protegido a través de
+\textbf{5 Lambdas + API Gateway} con autorizador Cognito.
 Todo dentro del \textit{Free Tier} de AWS para el volumen esperado en la fase inicial.
 
 \subsection{Stack tecnológico}
@@ -173,6 +174,15 @@ Base de datos direcciones & AWS DynamoDB (on-demand) & Amazon Web Services \\
 Lógica admin/usuarios & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
 Lógica pedidos & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
 Lógica direcciones & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+Base de datos reseñas & AWS DynamoDB (on-demand) & Amazon Web Services \\
+Lógica reseñas & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+Lógica pagos (stub) & AWS Lambda (Node.js 20.x) & Amazon Web Services \\
+Secretos Stripe & AWS Secrets Manager & Amazon Web Services \\
+Servicio de email & AWS Lambda + Resend API & Amazon Web Services / Resend \\
+Email transaccional & Resend (dominio nexocourier.com) & Resend \\
+Trigger bienvenida & AWS Lambda (Cognito PostConfirmation) & Amazon Web Services \\
+Email verificación & AWS Lambda (Cognito CustomMessage) + SES & Amazon Web Services \\
+Secreto Resend & AWS Secrets Manager (nexo/resend) & Amazon Web Services \\
 API & AWS API Gateway REST API + Cognito Authorizer & Amazon Web Services \\
 IaC / Despliegue & AWS CDK (TypeScript) & Amazon Web Services \\
 Alertas de costo & AWS Budgets & Amazon Web Services \\
@@ -187,20 +197,27 @@ Alertas de costo & AWS Budgets & Amazon Web Services \\
 \begin{lstlisting}[caption={Arquitectura general del backend}, numbers=none]
   Frontend (Next.js)
        |
-       |-- signUp / signIn / confirmSignUp ---------> Cognito User Pool
-       |                                              (nexo-users pool)
-       |
-       |-- GET/POST /orders ------------> API Gateway --> Cognito Authorizer
-       |-- GET/POST/PUT/DELETE /admin/orders   |               |
-       |-- GET/PUT/DELETE /admin/users         |          (valida JWT)
-       |-- GET/POST/PUT/DELETE /addresses      |               |
-                                               v               v
-                      Lambda nexo-admin-users  Lambda nexo-orders-api  Lambda nexo-addresses-api
-                               |                       |                       |
-                      +--------+--------+    +----------+----------+   +-------+-------+
-                      |                 |    |          |          |   |               |
-                   Cognito           DynamoDB        DynamoDB   DynamoDB           DynamoDB
-                (admin ops)         nexo-users      nexo-orders nexo-orders       nexo-addresses
+       |-- signUp / confirmSignUp -------> Cognito User Pool
+       |   (email verificacion branded)         |        |
+       |                          CustomMessage |        | PostConfirmation
+       |                                        v        v
+       |                         nexo-cognito-custom-message
+       |                         nexo-cognito-hooks -----> nexo-email-service
+       |                                                         |
+       |-- signIn ----------------------> Cognito User Pool      | Resend API
+       |                                                         v
+       |-- GET/POST /orders ----------> API Gateway --> Cognito Auth   email
+       |-- PUT /admin/orders/{id}            |               |
+       |   (cambia status)                   |          (valida JWT)
+       |                                     v               v
+       |            Lambda nexo-admin-users  Lambda nexo-orders-api (status change)
+       |            Lambda nexo-addresses-api Lambda nexo-reviews-api      |
+       |                     |                       |               fire-and-forget
+       |            Cognito  DynamoDB      DynamoDB  |          nexo-email-service
+       |           (admin)  nexo-users    nexo-orders|               |
+       |                                    (+ totalBase,            v
+       |                                     discountPct,       Resend API
+       |                                     totalFinal)     email al cliente
 \end{lstlisting}
 
 \subsection*{Descripción de componentes}
@@ -257,10 +274,57 @@ Auto-verificación & Email (código de 6 dígitos al registrarse) \\
 Recuperación de cuenta & Solo por email \\
 Self sign-up & Habilitado \\
 Removal policy & RETAIN \\
+Remitente de emails & \texttt{notificaciones@nexocourier.com} (vía Amazon SES) \\
+Nombre remitente & \texttt{nexo} \\
 \bottomrule
 \end{tabular}
 \caption{Configuración general del User Pool}
 \end{table}
+
+\subsection{Triggers Lambda de Cognito}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Trigger} & \textbf{Lambda} & \textbf{Descripción} \\
+\midrule
+PostConfirmation & \texttt{nexo-cognito-hooks} & Envía email de bienvenida al confirmar cuenta \\
+CustomMessage & \texttt{nexo-cognito-custom-message} & Personaliza el email de verificación con template nexo \\
+\bottomrule
+\end{tabular}
+\caption{Triggers Lambda del User Pool}
+\end{table}
+
+\begin{nexobox}
+\textbf{PostConfirmation:} Dispara exactamente una vez, cuando el usuario confirma
+su cuenta con el código de 6 dígitos. El Lambda \texttt{nexo-cognito-hooks} invoca
+\texttt{nexo-email-service} con \texttt{type: 'WELCOME'} (await obligatorio ---
+el contexto de Lambda se congela si no se espera).\\[4pt]
+\textbf{CustomMessage:} Dispara antes de que Cognito envíe cualquier email del sistema
+(verificación, reenvío de código). El Lambda construye un HTML con el template de nexo
+y retorna el evento modificado. Cognito reemplaza \texttt{\{"\#\#\#\#"\}} con el código
+real antes de enviar vía SES.
+\end{nexobox}
+
+\subsection{Amazon SES --- Envío desde Cognito}
+
+Para que Cognito pueda enviar desde \texttt{notificaciones@nexocourier.com} (en lugar
+del dominio genérico de Amazon), el dominio está verificado en \textbf{Amazon SES}
+(\texttt{us-east-1}). Estado actual:
+
+\begin{itemize}
+  \item Dominio \texttt{nexocourier.com}: \textbf{Verified} + \textbf{DKIM Successful}
+  \item Registros CNAME de DKIM agregados en Cloudflare (modo DNS only)
+  \item Solicitud de acceso a producción (salir del sandbox) enviada a AWS
+  \item En sandbox: solo envía a emails verificados en SES Console
+\end{itemize}
+
+\begin{nexobox}
+\textbf{Importante:} SES y Resend son independientes. SES solo se usa para que
+Cognito envíe el email de verificación desde el dominio propio. Resend se usa para
+todos los emails transaccionales post-registro (bienvenida, status de pedidos).
+\end{nexobox}
 
 \subsection{Política de contraseñas}
 
@@ -389,14 +453,17 @@ GSI & \texttt{userId-index} (PK: userId) \\
   "orderId":          "string",   // UUID (PK)
   "userId":           "string",   // sub de Cognito del dueno (GSI)
   "userName":         "string",   // para display en admin
-  "userEmail":        "string",   // para display en admin
+  "userEmail":        "string",   // para notificaciones y display admin
   "trackingNumber":   "string",
   "description":      "string",
   "startDate":        "string",   // ISO 8601
   "status":           "en_ruta" | "atascado_aduana" | "bodega_cr"
                     | "pendiente_pago" | "pagado_en_ruta" | "entregado",
-  "peso":             number,     // kg, opcional, lo carga el admin
-  "totalPagado":      number,     // USD, opcional, lo carga el admin
+  "peso":             number,     // kg, lo carga el admin
+  "totalPagado":      number,     // USD base (peso x tarifa), lo carga el admin
+  "totalBase":        number,     // USD sin descuento — se calcula al llegar a bodega_cr
+  "discountPct":      number,     // % Nexo Fiel aplicado (0, 3, 5 o 7)
+  "totalFinal":       number,     // USD que el cliente debe pagar (con descuento)
   "updatedAt":        "string",   // ISO 8601
   // Campos de entrega — denormalizados al crear el pedido:
   "deliveryProvince": "string",   // opcional
@@ -405,6 +472,15 @@ GSI & \texttt{userId-index} (PK: userId) \\
   "deliverySenas":    "string"    // opcional
 }
 \end{lstlisting}
+
+\begin{nexobox}
+\textbf{Campos de pago (totalBase, discountPct, totalFinal):} Se calculan y persisten
+automáticamente cuando el admin cambia el status a \texttt{bodega\_cr}. El Lambda
+\texttt{nexo-orders-api} hace un Scan de todos los pedidos del usuario con status
+billable (\texttt{bodega\_cr}, \texttt{pagado\_en\_ruta}, \texttt{entregado}), suma
+los kg acumulados, aplica los tiers de Nexo Fiel y guarda los tres campos en DynamoDB.
+Sirven como respaldo del cobro acordado y como input al servicio de pago futuro.
+\end{nexobox}
 
 \subsection{Tabla nexo-addresses}
 
@@ -449,6 +525,44 @@ desactiva la otra (\texttt{isDefault = false}).
 \textbf{Separación de responsabilidades:} Las credenciales (contraseña hasheada,
 tokens JWT) viven exclusivamente en Cognito. DynamoDB solo almacena datos de negocio.
 Los pedidos de usuarios eliminados se \textbf{conservan} como registro histórico.
+\end{nexobox}
+
+\subsection{Tabla nexo-reviews}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-reviews} \\
+Partition Key & \texttt{reviewId} (String, UUID) \\
+Billing Mode & PAY\_PER\_REQUEST \\
+Removal Policy & RETAIN \\
+GSI & \texttt{userId-index} (PK: userId) \\
+\bottomrule
+\end{tabular}
+\caption{Tabla nexo-reviews}
+\end{table}
+
+\begin{lstlisting}[language=bash, caption={Esquema de ítem en nexo-reviews}]
+{
+  "reviewId":  "string",   // UUID (PK)
+  "userId":    "string",   // sub de Cognito del autor (GSI)
+  "userName":  "string",   // nombre a mostrar publicamente
+  "rating":    number,     // 1 a 5 (entero)
+  "comment":   "string",   // minimo 10 caracteres
+  "createdAt": "string"    // ISO 8601
+}
+\end{lstlisting}
+
+\begin{nexobox}
+\textbf{Reglas de negocio:} Cada usuario solo puede dejar \textbf{una} reseña.
+El Lambda verifica vía GSI \texttt{userId-index} que no exista reseña previa del mismo
+\texttt{userId} antes de insertar. Para poder dejar reseña el usuario debe tener al
+menos un pedido con estado \texttt{entregado} en \texttt{nexo-orders}.
+Los 3 ítems con \texttt{userId = "seed"} son datos de demostración insertados mediante
+CDK Custom Resource al hacer deploy inicial (Ana Rodríguez, Carlos Jiménez, María González).
 \end{nexobox}
 
 % ==========================================================
@@ -568,6 +682,242 @@ acceso completo de lectura/escritura (PutItem, Query via GSI, UpdateItem, Delete
 retorna \texttt{403 Acceso denegado}.
 \end{nexobox}
 
+\subsection{Lambda nexo-reviews-api}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-reviews-api} \\
+Runtime & Node.js 20.x \\
+Handler & \texttt{index.handler} \\
+Timeout & 15 segundos \\
+Variables de entorno & \texttt{REVIEWS\_TABLE} (nexo-reviews), \texttt{ORDERS\_TABLE} (nexo-orders) \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de gestión de reseñas}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Método} & \textbf{Path} & \textbf{Rol requerido} & \textbf{Descripción} \\
+\midrule
+GET    & \texttt{/reviews} & Público (sin auth) & Lista todas las reseñas, orden cronológico inverso \\
+POST   & \texttt{/reviews} & Cualquier usuario auth & Crea reseña (con validaciones de negocio) \\
+DELETE & \texttt{/admin/reviews/\{reviewId\}} & Grupo \texttt{admin} & Elimina una reseña \\
+\bottomrule
+\end{tabular}
+\caption{Endpoints de nexo-reviews-api}
+\end{table}
+
+\begin{nexobox}
+\textbf{Validaciones en POST /reviews:}
+\begin{itemize}
+  \item \texttt{rating} debe ser un entero entre 1 y 5.
+  \item \texttt{comment} debe tener al menos 10 caracteres.
+  \item El usuario debe tener al menos un pedido con estado \texttt{entregado}
+    (consulta a \texttt{nexo-orders} vía GSI \texttt{userId-index}).
+  \item Solo se permite una reseña por usuario (consulta a \texttt{nexo-reviews}
+    vía GSI \texttt{userId-index}; retorna \texttt{409 Conflict} si ya existe).
+\end{itemize}
+\end{nexobox}
+
+\begin{nexobox}
+\textbf{Datos iniciales (seed):} Al hacer \texttt{cdk deploy} por primera vez se insertan
+3 reseñas de demostración vía CDK Custom Resource (\texttt{AwsCustomResource}):
+Ana Rodríguez (5\,★, nov.\ 2025), Carlos Jiménez (5\,★, dic.\ 2025) y María González
+(5\,★, ene.\ 2026). Estos ítems usan \texttt{userId = "seed"} y no compiten con
+usuarios reales.
+\end{nexobox}
+
+\subsection{Lambdas de Pagos (Stub)}
+
+\begin{nexobox}
+\textbf{Estado actual:} Las Lambdas de pago están desplegadas pero \textbf{no implementadas}.
+Ambas retornan respuestas de marcador de posición. La integración real con Stripe está
+pendiente de desarrollo.
+\end{nexobox}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-payment-create} \\
+Runtime & Node.js 20.x \\
+Timeout & 30 segundos \\
+Respuesta actual & \texttt{503 Service Unavailable} \\
+Variables de entorno & \texttt{CORS\_ORIGINS} \\
+\bottomrule
+\end{tabular}
+\caption{Lambda nexo-payment-create (stub)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-payment-webhook} \\
+Runtime & Node.js 20.x \\
+Timeout & 30 segundos \\
+Respuesta actual & \texttt{200 \{received: true\}} \\
+Variables de entorno & \texttt{ORDERS\_TABLE} (nexo-orders), \texttt{SECRET\_ARN} \\
+\bottomrule
+\end{tabular}
+\caption{Lambda nexo-payment-webhook (stub)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Método} & \textbf{Path} & \textbf{Rol requerido} & \textbf{Descripción} \\
+\midrule
+POST & \texttt{/payments/create}  & Cualquier usuario auth & Iniciar sesión de pago (stub: 503) \\
+POST & \texttt{/payments/webhook} & Público (sin auth) & Recibir evento de Stripe (stub: 200) \\
+\bottomrule
+\end{tabular}
+\caption{Endpoints de pagos (stub)}
+\end{table}
+
+\begin{nexobox}
+\textbf{Integración Stripe planeada:}
+\begin{itemize}
+  \item Las credenciales se almacenan en AWS Secrets Manager bajo el nombre
+    \texttt{nexo/stripe} con los campos \texttt{secretKey} y \texttt{webhookSecret}
+    (actualmente con valor \texttt{PENDIENTE}).
+  \item \texttt{nexo-payment-create} creará una Stripe Checkout Session y retornará
+    la \texttt{checkoutUrl} al frontend.
+  \item \texttt{nexo-payment-webhook} validará la firma del evento Stripe con
+    \texttt{stripe.webhooks.constructEvent()} y actualizará el pedido al estado
+    \texttt{pagado\_en\_ruta} en \texttt{nexo-orders}.
+\end{itemize}
+\end{nexobox}
+
+\subsection{Lambda nexo-email-service}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-email-service} \\
+Runtime & Node.js 20.x \\
+Handler & \texttt{index.handler} \\
+Timeout & 15 segundos \\
+Variables de entorno & \texttt{RESEND\_SECRET\_ARN} \\
+\bottomrule
+\end{tabular}
+\caption{Lambda centralizado de emails}
+\end{table}
+
+Lambda centralizado para todos los emails transaccionales. Cualquier otro Lambda
+que necesite enviar un email lo invoca con \texttt{InvocationType: 'Event'}
+(fire-and-forget). El Lambda lee la API Key de Resend desde Secrets Manager
+(\texttt{nexo/resend}) con caché en memoria.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{type} & \textbf{Trigger} & \textbf{Descripción} \\
+\midrule
+\texttt{STATUS\_CHANGE} & Admin cambia status del pedido & Email de notificación con estado, tracking y card de pago \\
+\texttt{WELCOME} & Cuenta confirmada (PostConfirmation) & Email de bienvenida con CTA a \texttt{/cuenta} \\
+\bottomrule
+\end{tabular}
+\caption{Tipos de email del servicio}
+\end{table}
+
+\begin{nexobox}
+\textbf{Email bodega\_cr:} Incluye una card de pago con fondo violeta (\texttt{\#F5F3FF}).
+Si el usuario tiene descuento Nexo Fiel: muestra precio original tachado en gris,
+badge ``Nexo Fiel X\%'' en morado y precio final en verde (\texttt{\#059669}).
+Si no tiene descuento: solo el precio final sin tachado.\\[4pt]
+\textbf{Statuses que generan email:} todos excepto \texttt{pendiente\_pago} (no usado
+en el flujo actual). Los 6 estados configurados son: \texttt{en\_ruta},
+\texttt{atascado\_aduana}, \texttt{bodega\_cr}, \texttt{pendiente\_pago},
+\texttt{pagado\_en\_ruta}, \texttt{entregado}.
+\end{nexobox}
+
+\subsection{Lambda nexo-cognito-hooks}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-cognito-hooks} \\
+Runtime & Node.js 20.x \\
+Trigger & Cognito PostConfirmation \\
+Timeout & 10 segundos \\
+Variables de entorno & \texttt{EMAIL\_FUNCTION\_NAME} (\texttt{nexo-email-service}) \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de hooks de Cognito}
+\end{table}
+
+Dispara cuando el usuario confirma su cuenta (\texttt{PostConfirmation\_ConfirmSignUp}).
+Invoca \texttt{nexo-email-service} con \texttt{type: 'WELCOME'} y devuelve el evento
+original a Cognito (obligatorio). La invocación se hace con \texttt{await} para evitar
+que el contexto de Lambda se congele antes de que el InvokeCommand se despache.
+
+\subsection{Lambda nexo-cognito-custom-message}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Nombre & \texttt{nexo-cognito-custom-message} \\
+Runtime & Node.js 20.x \\
+Trigger & Cognito CustomMessage \\
+Timeout & 5 segundos \\
+Variables de entorno & Ninguna \\
+\bottomrule
+\end{tabular}
+\caption{Lambda de mensaje personalizado de Cognito}
+\end{table}
+
+Intercepta los triggers \texttt{CustomMessage\_SignUp} y \texttt{CustomMessage\_ResendCode}
+para reemplazar el email de verificación genérico de Cognito con el template HTML
+de nexo. Cognito sustituye \texttt{\{"\#\#\#\#"\}} con el código real antes de enviar
+vía SES. Retorna siempre el evento original.
+
+\subsection{Programa de Fidelidad --- Nexo Fiel}
+
+Los descuentos se calculan automáticamente al cambiar status a \texttt{bodega\_cr},
+sumando el peso de todos los pedidos del usuario en statuses billables:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Kg acumulados} & \textbf{Descuento} & \textbf{Tier} \\
+\midrule
+$< 10$ kg & 0\% & Sin descuento \\
+$\geq 10$ kg & 3\% & Nexo Fiel Bronce \\
+$\geq 25$ kg & 5\% & Nexo Fiel Plata \\
+$\geq 50$ kg & 7\% & Nexo Fiel Oro \\
+\bottomrule
+\end{tabular}
+\caption{Tiers del programa Nexo Fiel}
+\end{table}
+
+Statuses que acumulan kg: \texttt{bodega\_cr}, \texttt{pagado\_en\_ruta}, \texttt{entregado}.
+El pedido actual ya está en \texttt{bodega\_cr} cuando se hace el Scan, por lo que
+sus kg están incluidos en el acumulado (correcto por diseño).
+
 \subsection{Permisos IAM de las Lambdas}
 
 \textbf{nexo-admin-users} sobre Cognito:
@@ -580,6 +930,22 @@ retorna \texttt{403 Acceso denegado}.
 \textbf{nexo-admin-users} sobre DynamoDB \texttt{nexo-users}: acceso completo de lectura/escritura.
 
 \textbf{nexo-orders-api} sobre DynamoDB \texttt{nexo-orders}: acceso completo de lectura/escritura (PutItem, Query, Scan, UpdateItem).
+
+\textbf{nexo-reviews-api} sobre DynamoDB \texttt{nexo-reviews}: acceso completo de lectura/escritura (PutItem, Query vía GSI, Scan, DeleteItem).
+
+\textbf{nexo-reviews-api} sobre DynamoDB \texttt{nexo-orders}: solo lectura (Query vía GSI \texttt{userId-index}, para verificar pedidos entregados).
+
+\textbf{nexo-payment-create} sobre DynamoDB \texttt{nexo-orders}: solo lectura.
+
+\textbf{nexo-payment-create} y \textbf{nexo-payment-webhook} sobre Secrets Manager \texttt{nexo/stripe}: solo lectura (\texttt{secretsmanager:GetSecretValue}).
+
+\textbf{nexo-payment-webhook} sobre DynamoDB \texttt{nexo-orders}: acceso completo de lectura/escritura (para actualizar estado a \texttt{pagado\_en\_ruta}).
+
+\textbf{nexo-email-service} sobre Secrets Manager \texttt{nexo/resend}: solo lectura (\texttt{GetSecretValue}).
+
+\textbf{nexo-orders-api} sobre Lambda \texttt{nexo-email-service}: \texttt{lambda:InvokeFunction} (para invocación fire-and-forget al cambiar status).
+
+\textbf{nexo-cognito-hooks} sobre Lambda \texttt{nexo-email-service}: \texttt{lambda:InvokeFunction} (para enviar email de bienvenida).
 
 % ==========================================================
 \section{AWS API Gateway}
@@ -633,6 +999,16 @@ invocar el Lambda. El Lambda recibe los claims directamente en
 │       ├── PUT    --> nexo-addresses-api  (editar / cambiar predeterminada)
 │       └── DELETE --> nexo-addresses-api  (eliminar, solo si hay otra)
 │
+├── reviews/
+│   ├── GET    --> nexo-reviews-api  (todas las resenas, PUBLICO sin auth)
+│   └── POST   --> nexo-reviews-api  (crear resena, auth requerido)
+│
+├── payments/
+│   ├── create/
+│   │   └── POST --> nexo-payment-create  (iniciar pago, auth requerido, stub 503)
+│   └── webhook/
+│       └── POST --> nexo-payment-webhook (evento Stripe, PUBLICO sin auth, stub 200)
+│
 └── admin/
     ├── users/
     │   ├── GET            --> nexo-admin-users  (listar usuarios)
@@ -641,14 +1017,19 @@ invocar el Lambda. El Lambda recibe los claims directamente en
     │       ├── PUT        --> nexo-admin-users  (actualizar usuario)
     │       └── DELETE     --> nexo-admin-users  (eliminar usuario)
     │
-    └── orders/
-        ├── GET            --> nexo-orders-api   (todos los pedidos)
-        ├── POST           --> nexo-orders-api   (crear pedido para cliente)
-        └── {orderId}/
-            ├── PUT        --> nexo-orders-api   (actualizar status/peso/total)
-            └── DELETE     --> nexo-orders-api   (eliminar pedido)
+    ├── orders/
+    │   ├── GET            --> nexo-orders-api   (todos los pedidos)
+    │   ├── POST           --> nexo-orders-api   (crear pedido para cliente)
+    │   └── {orderId}/
+    │       ├── PUT        --> nexo-orders-api   (actualizar status/peso/total)
+    │       └── DELETE     --> nexo-orders-api   (eliminar pedido)
+    │
+    └── reviews/
+        └── {reviewId}/
+            └── DELETE     --> nexo-reviews-api  (eliminar resena, solo admin)
 
-Todas las rutas requieren: Authorization: <JWT de Cognito>
+NOTA: /reviews GET y /payments/webhook POST no requieren Authorization (publicos).
+Todas las demas rutas requieren: Authorization: <JWT de Cognito>
 \end{lstlisting}
 
 % ==========================================================
@@ -685,6 +1066,7 @@ Stack ARN & \texttt{arn:aws:cloudformation:us-east-1:769953010359:stack/NexoStac
 \texttt{UsersTableName} & \texttt{nexo-users} \\
 \texttt{OrdersTableName} & \texttt{nexo-orders} \\
 \texttt{AddressesTableName} & \texttt{nexo-addresses} \\
+\texttt{ReviewsTableName} & \texttt{nexo-reviews} \\
 \bottomrule
 \end{tabular}
 \caption{Outputs del stack CDK}
@@ -814,7 +1196,7 @@ sobrevivirían, pero el sistema quedaría inoperativo.
   \begin{tikzpicture}
     \fill[nexoBlack] (0,0) rectangle (\textwidth, 0.8cm);
     \node[anchor=west, text=nexoSlate, font=\small]
-      at (0.3cm, 0.4cm) {nexo courier --- Confidencial --- Uso Interno --- v2.0};
+      at (0.3cm, 0.4cm) {nexo courier --- Confidencial --- Uso Interno --- v3.0};
     \node[anchor=east, text=nexoCyan, font=\small\itshape]
       at (\textwidth-0.3cm, 0.4cm) {Tu puente entre dos mundos.};
   \end{tikzpicture}

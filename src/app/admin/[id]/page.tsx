@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { getCurrentUser } from '@/lib/casillero'
 import { fetchAuthSession } from 'aws-amplify/auth'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 async function authHeaders(): Promise<HeadersInit> {
   const session = await fetchAuthSession()
@@ -33,6 +33,7 @@ const errorClass = 'text-xs text-status-red mt-1'
 
 export default function AdminUserDetailPage() {
   const router = useRouter()
+  const { ready } = useCurrentUser({ adminOnly: true })
   const { id } = useParams<{ id: string }>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -46,14 +47,10 @@ export default function AdminUserDetailPage() {
   })
 
   useEffect(() => {
-    getCurrentUser().then(async (user) => {
-      if (!user) { router.push('/login'); return }
-      const session = await fetchAuthSession()
-      const groups = (session.tokens?.idToken?.payload['cognito:groups'] as string[]) ?? []
-      if (!groups.includes('admin')) { router.replace('/casillero'); return }
-      fetchUser()
-    })
-  }, [])
+    if (!ready) return
+    fetchUser()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready])
 
   async function fetchUser() {
     try {

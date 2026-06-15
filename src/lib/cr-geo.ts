@@ -128,3 +128,18 @@ export const CR_GEO: GeoProvince[] = [
     ],
   },
 ]
+
+export function getProvinces(): string[] {
+  return CR_GEO.map(p => p.province)
+}
+
+export function getCantons(province: string): string[] {
+  return CR_GEO.find(p => p.province === province)?.cantons.map(c => c.canton) ?? []
+}
+
+export function getDistricts(province: string, canton: string): string[] {
+  return CR_GEO
+    .find(p => p.province === province)
+    ?.cantons.find(c => c.canton === canton)
+    ?.districts ?? []
+}

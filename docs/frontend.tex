@@ -22,6 +22,7 @@
 \renewcommand{\familydefault}{\sfdefault}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
 
+
 % ---------- Colores de marca nexo ----------
 \definecolor{nexoBlack}{HTML}{0A0E1A}
 \definecolor{nexoCyan}{HTML}{00D4FF}
@@ -283,8 +284,12 @@ nexocode/
 \texttt{/pedidos} & Protegida & Historial y gestión de pedidos del usuario \\
 \texttt{/direccion} & Protegida & CRUD de direcciones de entrega en Costa Rica \\
 \texttt{/cuenta} & Protegida & Editar perfil y eliminar cuenta \\
-\texttt{/admin} & Protegida (admin) & Dashboard: tabs Usuarios y Pedidos \\
+\texttt{/admin} & Protegida (admin) & Dashboard: tabs Usuarios, Pedidos y Reseñas \\
 \texttt{/admin/[id]} & Protegida (admin) & Editar o eliminar un usuario \\
+\texttt{/resenas} & Público & Galería pública de reseñas de clientes \\
+\texttt{/privacidad} & Público & Política de privacidad bilingüe (ES/EN) \\
+\texttt{/terminos} & Público & Términos y condiciones bilingüe (ES/EN) \\
+\texttt{/reembolsos} & Público & Política de reembolsos bilingüe (ES/EN) \\
 \bottomrule
 \end{tabular}
 \caption{Rutas del sitio web}
@@ -482,6 +487,13 @@ El API Gateway valida el token con el Cognito Authorizer antes de invocar el Lam
   \item Cada pedido muestra la dirección de entrega de forma sutil (distrito, cantón, provincia)
   \item Botón de pago con logos de Visa y Mastercard, habilitado desde el estado \texttt{bodega\_cr}
   \item Estado vacío con CTAs a \texttt{/casillero} y rastreo externo
+  \item \textbf{Reseña de pedido entregado:} Al tener al menos un pedido con estado
+    \texttt{entregado}, aparece el botón ``Dejar reseña'' al pie de la lista de pedidos.
+    Abre un modal con selector de estrellas (1--5) y campo de comentario (mínimo 10
+    caracteres). La lógica se delega a \texttt{createReview()} de
+    \texttt{src/lib/reviews.ts}.
+  \item \textbf{Restricciones de reseña:} Solo se puede dejar \textbf{una} reseña por
+    cuenta. Si el usuario ya dejó reseña, el botón no se muestra nuevamente.
 \end{itemize}
 
 \subsection{Panel admin --- /admin tab Pedidos}
@@ -525,10 +537,18 @@ a \texttt{/casillero} aunque conozcan la URL del panel.
 \midrule
 Usuarios & Lista de cuentas de Cognito & \texttt{GET /admin/users} \\
 Pedidos & Todos los pedidos del sistema & \texttt{GET /admin/orders} \\
+Reseñas & Todas las reseñas del sistema & \texttt{GET /reviews} (público) \\
 \bottomrule
 \end{tabular}
 \caption{Tabs del panel de administración}
 \end{table}
+
+\begin{nexobox}
+\textbf{Tab Reseñas:} Muestra todas las reseñas ordenadas por fecha. Cada fila
+muestra el nombre del autor, calificación (1--5 estrellas), comentario y fecha.
+El administrador puede eliminar cualquier reseña con botón de borrado y confirmación.
+La eliminación llama a \texttt{deleteReview()} de \texttt{src/lib/reviews.ts}.
+\end{nexobox}
 
 \subsection{Validaciones de negocio en pedidos}
 
@@ -727,6 +747,28 @@ export const CR_GEO: GeoProvince[]   // 7 provincias, ~82 cantones, ~474 distrit
     \texttt{deliverySenas} se guardan en el pedido (denormalizados)
 \end{itemize}
 
+\subsection{Sistema de Reseñas --- src/lib/reviews.ts}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Función} & \textbf{Descripción} \\
+\midrule
+\texttt{getReviews()} & GET \texttt{/reviews} --- todas las reseñas (público, sin auth, \texttt{revalidate: 60\,s}) \\
+\texttt{createReview(data)} & POST \texttt{/reviews} --- crea reseña (rating + comment, auth requerido) \\
+\texttt{deleteReview(reviewId)} & DELETE \texttt{/admin/reviews/\{id\}} --- elimina reseña (solo admin) \\
+\bottomrule
+\end{tabular}
+\caption{API de reseñas --- src/lib/reviews.ts}
+\end{table}
+
+\begin{nexobox}
+\textbf{Nota de fetch:} \texttt{getReviews()} usa \texttt{next: \{ revalidate: 60 \}}
+para ISR en Next.js 14. El endpoint \texttt{GET /reviews} no requiere token de
+autenticación: es el único endpoint público del API Gateway.
+\end{nexobox}
+
 % ==========================================================
 \section{Variables de Entorno}
 
@@ -897,6 +939,90 @@ Región de todos los recursos & \texttt{us-east-1} \\
 \caption{Repositorio y cuentas AWS}
 \end{table}
 
+% ==========================================================
+\section{Páginas Legales}
+
+\begin{nexobox}
+Las tres páginas legales de nexo son \textbf{bilingües} (Español / English). El idioma
+activo se selecciona con un toggle en la parte superior de la página, sin recarga
+(\texttt{useState}). La última fecha de actualización es Mayo 2026 / May 2026.
+\end{nexobox}
+
+\subsection{Componente reutilizable --- src/components/legal/LegalPage.tsx}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Prop} & \textbf{Descripción} \\
+\midrule
+\texttt{titleEs} / \texttt{titleEn} & Título de la página en cada idioma \\
+\texttt{lastUpdated} & Fecha de última actualización (ej.\ ``Mayo 2026 / May 2026'') \\
+\texttt{sectionsEs} / \texttt{sectionsEn} & Array de \texttt{\{heading, content\}} por idioma \\
+\bottomrule
+\end{tabular}
+\caption{Props de LegalPage.tsx}
+\end{table}
+
+El campo \texttt{content} de cada sección puede ser \texttt{string} (párrafo) o
+\texttt{string[]} (lista con viñetas de color cyan). El componente numera las secciones
+automáticamente e incluye pie de página con enlace a \texttt{nexxo.courier@gmail.com}
+y WhatsApp.
+
+\subsection{Páginas y rutas legales}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Ruta} & \textbf{Título ES} & \textbf{Contenido principal} \\
+\midrule
+\texttt{/privacidad} & Política de Privacidad & Responsable, datos recogidos, finalidad, derechos ARCO \\
+\texttt{/terminos}   & Términos y Condiciones & Casillero, tarifas, artículos prohibidos, responsabilidad \\
+\texttt{/reembolsos} & Política de Reembolsos & Elegibilidad, proceso, montos, exclusiones \\
+\bottomrule
+\end{tabular}
+\caption{Páginas legales del sitio}
+\end{table}
+
+\begin{nexobox}
+\textbf{Acceso:} Las tres páginas son públicas y no requieren autenticación.
+Son accesibles desde el \texttt{Footer} del sitio. Ninguna requiere protección de ruta.
+\end{nexobox}
+
+% ==========================================================
+\section{Página de Reseñas Públicas --- /resenas}
+
+Página pública que muestra todas las reseñas de clientes que recibieron paquetes con
+nexo. No requiere autenticación.
+
+\begin{itemize}
+  \item Carga las reseñas con \texttt{getReviews()} al montar el componente
+    (\texttt{useEffect}).
+  \item Muestra el conteo total de reseñas en el subtítulo.
+  \item Durante la carga muestra 4 \textbf{skeleton cards} animadas (\texttt{animate-pulse}).
+  \item Cada \texttt{ReviewCard} muestra: nombre del autor, fecha formateada en
+    \texttt{es-CR}, badge ``\checkmark{} Paquete entregado'', estrellas y comentario.
+  \item Si no hay reseñas, muestra estado vacío con CTA para que el usuario deje la
+    primera reseña desde \texttt{/pedidos}.
+  \item Botón ``Volver al inicio'' (\texttt{ArrowLeft}) para navegar a \texttt{/}.
+\end{itemize}
+
+% ==========================================================
+\section{Página Nosotros --- /nosotros}
+
+Página institucional pública. Construida como Server Component (sin directiva
+\texttt{'use client'}). Compone secciones reutilizables del landing:
+
+\begin{itemize}
+  \item \textbf{Hero:} Título ``Ticos que entienden al tico'', texto sobre el origen de la empresa.
+  \item \textbf{Misión y Visión:} Dos cards lado a lado (\texttt{md:grid-cols-2}).
+  \item \textbf{Historia:} Narrativa de fundación con visual placeholder USA\,$\rightarrow$\,CR.
+  \item \textbf{ValuesSection:} Sección de valores reutilizada del landing.
+  \item \textbf{ContactSection:} Datos de contacto.
+  \item \textbf{CtaBannerSection:} Llamada a cotizar.
+\end{itemize}
+
 \section*{Glosario}
 
 \begin{description}
@@ -906,8 +1032,15 @@ Región de todos los recursos & \texttt{us-east-1} \\
     automáticamente cuando el usuario hace click fuera de él, sin botón de guardar.
   \item[\textbf{Double opt-in}] Flujo de registro que requiere confirmar la dirección
     de correo con un código antes de activar la cuenta.
+  \item[\textbf{ISR}] Incremental Static Regeneration. Estrategia de Next.js que
+    regenera páginas estáticas en el servidor con una frecuencia configurable
+    (\texttt{revalidate}). Usada en \texttt{getReviews()} para refrescar la caché
+    cada 60 segundos.
   \item[\textbf{JWT}] JSON Web Token. Formato de token firmado que Cognito emite
     tras la autenticación exitosa.
+  \item[\textbf{LegalPage}] Componente React reutilizable que renderiza páginas
+    legales bilingües con toggle ES/EN, numeración automática de secciones y
+    soporte para contenido tipo párrafo o lista.
   \item[\textbf{localStorage}] Almacenamiento del navegador donde Amplify v6 guarda
     los tokens de sesión. A diferencia de las cookies, no es accesible desde el
     Edge Runtime de Next.js.
@@ -915,6 +1048,9 @@ Región de todos los recursos & \texttt{us-east-1} \\
     al navegador del cliente.
   \item[\textbf{Cognito Authorizer}] Componente de API Gateway que valida el JWT
     de cada request antes de invocar el Lambda, extrayendo los claims automáticamente.
+  \item[\textbf{Seed data}] Datos de ejemplo insertados automáticamente al hacer
+    deploy. En nexo se usan 3 reseñas de demostración con \texttt{userId = "seed"}
+    creadas vía CDK Custom Resource.
   \item[\textbf{Voseo}] Forma pronominal del español costarricense. Parte de la
     voz de marca nexo en toda la interfaz.
 \end{description}

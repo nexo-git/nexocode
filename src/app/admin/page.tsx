@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '@/lib/casillero'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
 import { calculateLoyalty } from '@/lib/loyalty'
 import { getReviews, deleteReview } from '@/lib/reviews'
@@ -10,6 +8,7 @@ import { Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, S
 import type { NexoReview } from '@/types/casillero'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
 
 interface CognitoUser {
@@ -47,7 +46,7 @@ async function authHeaders(): Promise<HeadersInit> {
 }
 
 export default function AdminPage() {
-  const router = useRouter()
+  const { ready } = useCurrentUser({ adminOnly: true })
   const [tab, setTab] = useState<'usuarios' | 'pedidos' | 'resenas'>('usuarios')
 
   // ── Usuarios ──────────────────────────────────────────────────────
@@ -83,17 +82,12 @@ export default function AdminPage() {
   const apiUrl = process.env.NEXT_PUBLIC_ADMIN_API_URL
 
   useEffect(() => {
-    getCurrentUser().then(async (user) => {
-      if (!user) { router.push('/login'); return }
-      const session = await fetchAuthSession()
-      const groups = (session.tokens?.idToken?.payload['cognito:groups'] as string[]) ?? []
-      if (!groups.includes('admin')) { router.replace('/casillero'); return }
-      fetchUsers()
-      fetchOrders()
-      fetchReviews()
-    })
+    if (!ready) return
+    fetchUsers()
+    fetchOrders()
+    fetchReviews()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [ready])
 
   useEffect(() => {
     const q = search.toLowerCase()

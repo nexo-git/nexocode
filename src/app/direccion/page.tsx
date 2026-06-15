@@ -1,17 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { MapPin, Plus, X, Trash2, Star, Edit, Check } from 'lucide-react'
-import { getCurrentUser } from '@/lib/casillero'
 import { getMyAddresses, createAddress, updateAddress, deleteAddress } from '@/lib/addresses'
-import { CR_GEO } from '@/lib/cr-geo'
+import { getProvinces, getCantons, getDistricts } from '@/lib/cr-geo'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import type { NexoAddress } from '@/types/casillero'
 
 export default function DireccionPage() {
-  const router = useRouter()
+  const { ready } = useCurrentUser()
   const [addresses, setAddresses] = useState<NexoAddress[]>([])
-  const [ready, setReady] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
   // Form state
@@ -30,16 +28,14 @@ export default function DireccionPage() {
   const [editSenas, setEditSenas] = useState('')
 
   useEffect(() => {
-    getCurrentUser().then((user) => {
-      if (!user) { router.replace('/login'); return }
-      getMyAddresses().then((data) => { setAddresses(data); setReady(true) })
-    })
-  }, [router])
+    if (!ready) return
+    getMyAddresses().then((data) => setAddresses(data))
+  }, [ready])
 
-  const cantons = CR_GEO.find(p => p.province === province)?.cantons ?? []
-  const districts = cantons.find(c => c.canton === canton)?.districts ?? []
-  const editCantons = CR_GEO.find(p => p.province === editProvince)?.cantons ?? []
-  const editDistricts = editCantons.find(c => c.canton === editCanton)?.districts ?? []
+  const cantons = getCantons(province)
+  const districts = getDistricts(province, canton)
+  const editCantons = getCantons(editProvince)
+  const editDistricts = getDistricts(editProvince, editCanton)
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -143,7 +139,7 @@ export default function DireccionPage() {
               <label className="text-xs font-medium text-ghost/80 mb-1.5 block">Provincia <span className="text-status-red">*</span></label>
               <select className={selectCls} value={province} onChange={e => { setProvince(e.target.value); setCanton(''); setDistrict('') }}>
                 <option value="">Seleccioná una provincia...</option>
-                {CR_GEO.map(p => <option key={p.province} value={p.province}>{p.province}</option>)}
+                {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
 
@@ -151,7 +147,7 @@ export default function DireccionPage() {
               <label className="text-xs font-medium text-ghost/80 mb-1.5 block">Cantón <span className="text-status-red">*</span></label>
               <select className={selectCls} value={canton} onChange={e => { setCanton(e.target.value); setDistrict('') }} disabled={!province}>
                 <option value="">Seleccioná un cantón...</option>
-                {cantons.map(c => <option key={c.canton} value={c.canton}>{c.canton}</option>)}
+                {cantons.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -209,11 +205,11 @@ export default function DireccionPage() {
                   // Modo edición
                   <div className="space-y-3">
                     <select className={selectCls} value={editProvince} onChange={e => { setEditProvince(e.target.value); setEditCanton(''); setEditDistrict('') }}>
-                      {CR_GEO.map(p => <option key={p.province} value={p.province}>{p.province}</option>)}
+                      {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     <select className={selectCls} value={editCanton} onChange={e => { setEditCanton(e.target.value); setEditDistrict('') }} disabled={!editProvince}>
                       <option value="">Seleccioná un cantón...</option>
-                      {editCantons.map(c => <option key={c.canton} value={c.canton}>{c.canton}</option>)}
+                      {editCantons.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                     <select className={selectCls} value={editDistrict} onChange={e => setEditDistrict(e.target.value)} disabled={!editCanton}>
                       <option value="">Seleccioná un distrito...</option>

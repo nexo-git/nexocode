@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Package, ArrowRight, Plus, X, CreditCard, MapPin, Star, MessageSquare } from 'lucide-react'
-import { getCurrentUser } from '@/lib/casillero'
 import { getMyOrders, addOrder } from '@/lib/orders'
 import { getMyAddresses } from '@/lib/addresses'
 import { createReview } from '@/lib/reviews'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
@@ -32,11 +31,9 @@ function payButtonProps(status: string): { label: string; enabled: boolean } {
 }
 
 export default function PedidosPage() {
-  const router = useRouter()
-  const [user, setUser]               = useState<NexoUser | null>(null)
+  const { user, ready }               = useCurrentUser()
   const [orders, setOrders]           = useState<NexoOrder[]>([])
   const [addresses, setAddresses]     = useState<NexoAddress[]>([])
-  const [ready, setReady]             = useState(false)
   const [showForm, setShowForm]       = useState(false)
   const [showNoAddrModal, setShowNoAddrModal] = useState(false)
   const [tracking, setTracking]       = useState('')
@@ -53,17 +50,15 @@ export default function PedidosPage() {
   const [reviewDone, setReviewDone]           = useState(false)
 
   useEffect(() => {
-    Promise.all([getCurrentUser(), getMyOrders(), getMyAddresses()])
-      .then(([current, ordersData, addrsData]) => {
-        if (!current) { router.replace('/login'); return }
-        setUser(current)
+    if (!ready) return
+    Promise.all([getMyOrders(), getMyAddresses()])
+      .then(([ordersData, addrsData]) => {
         setOrders(ordersData)
         setAddresses(addrsData)
         const def = addrsData.find(a => a.isDefault)
         if (def) setSelectedAddressId(def.addressId)
-        setReady(true)
       })
-  }, [router])
+  }, [ready])
 
   const hasDelivered = useMemo(() => orders.some(o => o.status === 'entregado'), [orders])
   const { discountMap } = useMemo(() => calculateLoyalty(orders), [orders])
