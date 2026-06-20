@@ -4,6 +4,8 @@ import {
   signOut,
   confirmSignUp,
   resendSignUpCode,
+  resetPassword,
+  confirmResetPassword,
   getCurrentUser as getAmplifyUser,
   fetchUserAttributes,
   updateUserAttributes,
@@ -132,6 +134,41 @@ export async function deleteCurrentUser(): Promise<{ success: true } | { error: 
 
 export async function logoutUser(): Promise<void> {
   await signOut()
+}
+
+export async function forgotPassword(email: string): Promise<{ success: true } | { error: string }> {
+  try {
+    await resetPassword({ username: email.toLowerCase().trim() })
+    return { success: true }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al enviar el código.'
+    if (message.includes('UserNotFoundException') || message.includes('user does not exist')) {
+      return { error: 'No existe una cuenta con ese correo electrónico.' }
+    }
+    if (message.includes('LimitExceededException')) {
+      return { error: 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.' }
+    }
+    return { error: message }
+  }
+}
+
+export async function confirmNewPassword(email: string, code: string, newPassword: string): Promise<{ success: true } | { error: string }> {
+  try {
+    await confirmResetPassword({ username: email.toLowerCase().trim(), confirmationCode: code, newPassword })
+    return { success: true }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al restablecer la contraseña.'
+    if (message.includes('CodeMismatchException') || message.includes('Invalid verification code')) {
+      return { error: 'Código incorrecto. Revisá tu correo e intentá de nuevo.' }
+    }
+    if (message.includes('ExpiredCodeException')) {
+      return { error: 'El código expiró. Solicitá uno nuevo.' }
+    }
+    if (message.includes('InvalidPasswordException')) {
+      return { error: 'La contraseña no cumple los requisitos mínimos (8 caracteres, letras y números).' }
+    }
+    return { error: message }
+  }
 }
 
 export function generateAddress(nombre: string, apellido = ''): string {
