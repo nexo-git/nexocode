@@ -5,9 +5,6 @@ import Link from 'next/link'
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 bg-hero-glow pointer-events-none" />
-      <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-cyan/5 blur-3xl pointer-events-none" />
 
       {/* Grid */}
       <div
