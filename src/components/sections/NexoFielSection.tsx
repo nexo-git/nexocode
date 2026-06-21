@@ -42,7 +42,7 @@ export default function NexoFielSection() {
   }, [])
 
   return (
-    <section className="bg-space-black py-24 px-4">
+    <section className="py-24 px-4">
       <div className="max-w-5xl mx-auto">
 
         {/* Eyebrow + heading */}

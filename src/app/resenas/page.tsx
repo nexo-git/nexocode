@@ -74,7 +74,7 @@ export default function ResenasPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-3xl mx-auto px-4 md:px-8">
 
         <Link

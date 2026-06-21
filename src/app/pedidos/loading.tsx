@@ -1,6 +1,6 @@
 export default function PedidosLoading() {
   return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         <div className="h-3 w-24 bg-white/5 rounded-full mb-4 animate-pulse" />
         <div className="h-10 w-52 bg-white/5 rounded-xl mb-3 animate-pulse" />

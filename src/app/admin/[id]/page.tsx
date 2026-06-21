@@ -101,7 +101,7 @@ export default function AdminUserDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-2xl mx-auto px-4 md:px-8">
         <Link href="/admin" className="inline-flex items-center gap-2 text-slate hover:text-cyan text-sm mb-8 transition-colors">
           <ArrowLeft size={15} /> Volver a usuarios

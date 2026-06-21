@@ -35,7 +35,7 @@ const contactItems = [
 
 export default function ContactSection() {
   return (
-    <section className="py-24 bg-space-black">
+    <section className="py-24">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         <div className="text-center mb-14">
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Contacto</p>

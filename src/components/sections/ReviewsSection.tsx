@@ -29,7 +29,7 @@ function Stars({ rating }: { rating: number }) {
 function ReviewCard({ review }: { review: NexoReview }) {
   const date = new Date(review.createdAt).toLocaleDateString('es-CR', { month: 'long', year: 'numeric' })
   return (
-    <div className="bg-midnight border border-white/5 rounded-2xl px-6 py-5 flex flex-col gap-3">
+    <div className="bg-midnight border border-white/8 rounded-2xl px-6 py-5 flex flex-col gap-3 hover:border-white/15 hover:-translate-y-0.5 transition-all duration-200 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-ghost font-semibold text-sm">{review.userName}</p>

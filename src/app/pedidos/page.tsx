@@ -68,7 +68,7 @@ export default function PedidosPage() {
   )
 
   if (!ready) return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         <div className="h-3 w-24 bg-white/5 rounded-full mb-4 animate-pulse" />
         <div className="h-10 w-52 bg-white/5 rounded-xl mb-3 animate-pulse" />
@@ -128,7 +128,7 @@ export default function PedidosPage() {
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
 
   return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
 
         {/* Modal: sin dirección */}
@@ -408,11 +408,6 @@ export default function PedidosPage() {
                       Tu casillero
                     </Button>
                   </Link>
-                  <a href="https://postal.ninja/es" target="_blank" rel="noopener noreferrer">
-                    <Button variant="secondary" size="md" icon={<ArrowRight size={16} />} iconPosition="right">
-                      Rastrear paquete
-                    </Button>
-                  </a>
                 </div>
               </div>
             )}

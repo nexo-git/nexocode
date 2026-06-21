@@ -30,7 +30,7 @@ function LoginContent() {
   if (!ready) return null
 
   return (
-    <div className="min-h-screen bg-space-black pt-24 pb-20 flex items-center">
+    <div className="min-h-screen pt-24 pb-20 flex items-center">
       <div className="w-full max-w-md mx-auto px-4 md:px-8">
 
         <div className="text-center mb-10">

@@ -280,7 +280,7 @@ export class NexoStack extends cdk.Stack {
       `),
       environment: {
         TABLE_NAME: addressesTable.tableName,
-        CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        CORS_ORIGINS: 'https://www.nexocourier.com,https://nexocourier.com,http://localhost:3000',
       },
       timeout: cdk.Duration.seconds(15),
     })
@@ -339,7 +339,7 @@ export class NexoStack extends cdk.Stack {
       environment: {
         USER_POOL_ID: userPool.userPoolId,
         TABLE_NAME: usersTable.tableName,
-        CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        CORS_ORIGINS: 'https://www.nexocourier.com,https://nexocourier.com,http://localhost:3000',
       },
       timeout: cdk.Duration.seconds(15),
     })
@@ -558,7 +558,7 @@ export class NexoStack extends cdk.Stack {
       `),
       environment: {
         TABLE_NAME: ordersTable.tableName,
-        CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        CORS_ORIGINS: 'https://www.nexocourier.com,https://nexocourier.com,http://localhost:3000',
         EMAIL_FUNCTION_NAME: 'nexo-email-service',
       },
       timeout: cdk.Duration.seconds(15),
@@ -678,7 +678,7 @@ export class NexoStack extends cdk.Stack {
       environment: {
         REVIEWS_TABLE: reviewsTable.tableName,
         ORDERS_TABLE: ordersTable.tableName,
-        CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        CORS_ORIGINS: 'https://www.nexocourier.com,https://nexocourier.com,http://localhost:3000',
       },
       timeout: cdk.Duration.seconds(15),
     })
@@ -1004,7 +1004,7 @@ export class NexoStack extends cdk.Stack {
         }
       `),
       environment: {
-        CORS_ORIGINS: 'https://www.nexocourier.com,http://localhost:3000',
+        CORS_ORIGINS: 'https://www.nexocourier.com,https://nexocourier.com,http://localhost:3000',
       },
       timeout: cdk.Duration.seconds(30),
     })
@@ -1037,7 +1037,7 @@ export class NexoStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'NexoAdminApi', {
       restApiName: 'nexo-admin-api',
       defaultCorsPreflightOptions: {
-        allowOrigins: ['https://www.nexocourier.com', 'http://localhost:3000'],
+        allowOrigins: ['https://www.nexocourier.com', 'https://nexocourier.com', 'http://localhost:3000'],
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: ['Authorization', 'Content-Type'],
       },

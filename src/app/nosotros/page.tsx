@@ -23,7 +23,7 @@ export default function NosotrosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="min-h-[50vh] flex items-end bg-space-black pt-32 pb-16 relative overflow-hidden">
+      <section className="min-h-[50vh] flex items-end pt-32 pb-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-hero-glow pointer-events-none" />
         <div className="max-w-4xl mx-auto px-4 md:px-8 relative z-10">
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-4">Quiénes somos</p>
@@ -53,7 +53,7 @@ export default function NosotrosPage() {
       </section>
 
       {/* Story section */}
-      <section className="py-20 bg-space-black">
+      <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 md:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
@@ -91,8 +91,6 @@ export default function NosotrosPage() {
         subtext="Tu primer envío con nexo está a 30 segundos de distancia."
         ctaLabel="Cotizá gratis"
         ctaHref="/cotizar"
-        secondaryLabel="Rastrear con postal.ninja"
-        secondaryHref="https://postal.ninja/es"
       />
     </>
   )

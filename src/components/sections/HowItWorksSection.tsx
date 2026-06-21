@@ -29,9 +29,9 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="como-funciona" className="py-24 bg-space-black">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        {/* Header */}
+    <section id="como-funciona" className="py-24">
+      <div className="section-line mb-0" />
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-24">
         <div className="text-center mb-16">
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Proceso</p>
           <h2 className="text-4xl md:text-5xl font-bold text-ghost mb-4">
@@ -42,21 +42,23 @@ export default function HowItWorksSection() {
           </p>
         </div>
 
-        {/* Steps grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-          {/* Connector line (desktop) */}
-          <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-cyan/20 to-transparent" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 relative">
+          {/* Connector line */}
+          <div className="hidden lg:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-cyan/25 to-transparent" />
 
           {steps.map((step, i) => {
             const Icon = step.icon
             return (
-              <div key={i} className="relative flex flex-col items-center text-center p-6">
+              <div
+                key={i}
+                className="relative flex flex-col items-center text-center p-6 rounded-2xl border border-white/5 bg-midnight/40 hover:border-cyan/20 hover:bg-midnight/60 hover:-translate-y-1 hover:shadow-cyan-glow transition-all duration-300"
+              >
                 {/* Step bubble */}
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-midnight border border-white/10 flex items-center justify-center mb-0 shadow-card group-hover:border-cyan/30 transition-colors">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan/15 to-cyan/5 border border-cyan/20 flex items-center justify-center">
                     <Icon size={24} className="text-cyan" />
                   </div>
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-cyan text-space-black text-xs font-black flex items-center justify-center leading-none">
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-cyan text-space-black text-xs font-black flex items-center justify-center leading-none shadow-cyan-glow">
                     {i + 1}
                   </span>
                 </div>

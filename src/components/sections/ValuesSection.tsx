@@ -1,5 +1,4 @@
 import { Eye, DollarSign, MessageCircle, Zap, Shield } from 'lucide-react'
-import Card from '@/components/ui/Card'
 
 const values = [
   {
@@ -31,9 +30,11 @@ const values = [
 
 export default function ValuesSection() {
   return (
-    <section className="py-24 bg-midnight/40">
+    <section className="py-24 bg-midnight/40 relative overflow-hidden">
+      <div className="section-line absolute top-0 left-0 right-0" />
+      <div className="section-line absolute bottom-0 left-0 right-0" />
+
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        {/* Header */}
         <div className="text-center mb-14">
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Por qué nexo</p>
           <h2 className="text-4xl md:text-5xl font-bold text-ghost mb-4">
@@ -44,18 +45,20 @@ export default function ValuesSection() {
           </p>
         </div>
 
-        {/* Cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {values.map((value, i) => {
             const Icon = value.icon
             return (
-              <Card key={i} variant="default" className="group hover:border-cyan/20 transition-colors duration-300">
-                <div className="w-10 h-10 rounded-xl bg-cyan/10 flex items-center justify-center mb-4 group-hover:bg-cyan/15 transition-colors">
-                  <Icon size={20} className="text-cyan" />
+              <div
+                key={i}
+                className="group rounded-2xl p-6 border border-white/5 bg-midnight/60 hover:border-cyan/20 hover:-translate-y-1 hover:shadow-cyan-glow transition-all duration-300 shadow-card"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan/15 to-cyan/5 border border-cyan/15 flex items-center justify-center mb-4 group-hover:from-cyan/20 group-hover:border-cyan/25 transition-all">
+                  <Icon size={22} className="text-cyan" />
                 </div>
                 <h3 className="text-ghost font-semibold text-lg mb-2">{value.title}</h3>
                 <p className="text-slate text-sm leading-relaxed">{value.description}</p>
-              </Card>
+              </div>
             )
           })}
         </div>

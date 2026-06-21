@@ -30,7 +30,7 @@ export default function CotizarPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-space-black pt-24 pb-20">
+      <div className="min-h-screen pt-24 pb-20">
         <div className="max-w-5xl mx-auto px-4 md:px-8">
           {/* Header */}
           <div className="text-center mb-12">
@@ -89,8 +89,6 @@ export default function CotizarPage() {
         subtext="Nuestro equipo está disponible por WhatsApp para ayudarte con cualquier consulta."
         ctaLabel="Escribinos ahora"
         ctaHref="https://wa.me/50661132863"
-        secondaryLabel="Rastrear con postal.ninja"
-        secondaryHref="https://postal.ninja/es"
       />
     </>
   )
