@@ -45,11 +45,6 @@ export default function Footer() {
                 </li>
               ))}
               <li>
-                <a href="https://postal.ninja/es" target="_blank" rel="noopener noreferrer" className="text-slate text-sm hover:text-cyan transition-colors">
-                  Rastrear paquete
-                </a>
-              </li>
-              <li>
                 <Link href="/casillero" className="text-slate text-sm hover:text-cyan transition-colors">
                   Mi casillero
                 </Link>

@@ -39,8 +39,6 @@ export default function Home() {
         subtext="Cotizá gratis en 30 segundos. Sin registro, sin complicaciones."
         ctaLabel="Cotizá tu envío"
         ctaHref="/cotizar"
-        secondaryLabel="Rastrear con postal.ninja"
-        secondaryHref="https://postal.ninja/es"
       />
     </>
   )

@@ -253,11 +253,6 @@ export default function Navbar() {
                     Abrir casillero
                   </Button>
                 </Link>
-                <a href="https://postal.ninja/es" target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="md" className="w-full" icon={<ArrowRight size={14} />} iconPosition="right">
-                    Rastrear paquete
-                  </Button>
-                </a>
               </>
             )}
 

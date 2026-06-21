@@ -80,11 +80,6 @@ export default function AddressCard({ user }: AddressCardProps) {
         >
           {copied ? 'Copiado' : 'Copiar dirección'}
         </Button>
-        <a href="https://postal.ninja/es" target="_blank" rel="noopener noreferrer" className="flex-1">
-          <Button variant="secondary" size="md" className="w-full" icon={<Package size={16} />}>
-            Rastrear paquete
-          </Button>
-        </a>
       </div>
       <Link href="/pedidos" className="block mt-3">
         <Button variant="secondary" size="md" className="w-full" icon={<ArrowRight size={16} />} iconPosition="right">

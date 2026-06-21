@@ -314,7 +314,7 @@ export default function PedidosPage() {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
           {/* Lista de pedidos — orden 2 en mobile, 1 en desktop */}
-          <div className="flex-1 min-w-0 order-2 lg:order-1">
+          <div className="flex-1 min-w-0 w-full order-2 lg:order-1">
             {sortedOrders.length > 0 ? (
               <>
                 <div className="space-y-3">
@@ -381,17 +381,6 @@ export default function PedidosPage() {
                     )
                   })}
                 </div>
-                {hasDelivered && !reviewDone && (
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={() => { setShowReviewModal(true); setReviewError('') }}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate hover:text-ghost hover:border-white/20 font-medium text-sm transition-colors"
-                    >
-                      <Star size={15} />
-                      Dejar reseña
-                    </button>
-                  </div>
-                )}
               </>
             ) : (
               <div className="border border-dashed border-white/10 rounded-2xl p-14 flex flex-col items-center text-center">
@@ -415,7 +404,20 @@ export default function PedidosPage() {
 
           {/* Loyalty bar — arriba en mobile, derecha en desktop */}
           <div className="w-full lg:w-72 order-1 lg:order-2 lg:sticky lg:top-28">
-            <LoyaltyBar orders={orders} />
+            <div className="flex flex-row gap-3 items-start lg:flex-col">
+              <div className="flex-1">
+                <LoyaltyBar orders={orders} />
+              </div>
+              {hasDelivered && !reviewDone && (
+                <button
+                  onClick={() => { setShowReviewModal(true); setReviewError('') }}
+                  className="shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <Star size={16} className="text-yellow-400 fill-yellow-400/20" />
+                  <span className="text-xs text-slate text-center">Dejá tu<br />reseña</span>
+                </button>
+              )}
+            </div>
           </div>
 
         </div>
