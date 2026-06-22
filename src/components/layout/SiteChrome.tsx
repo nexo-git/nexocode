@@ -5,12 +5,17 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import WhatsAppButton from '@/components/ui/WhatsAppButton'
 
-export default function SiteChrome() {
+export function SiteHeader() {
+  const pathname = usePathname()
+  if (pathname.startsWith('/admin')) return null
+  return <Navbar />
+}
+
+export function SiteFooter() {
   const pathname = usePathname()
   if (pathname.startsWith('/admin')) return null
   return (
     <>
-      <Navbar />
       <Footer />
       <WhatsAppButton />
     </>

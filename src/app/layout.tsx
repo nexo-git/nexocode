@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import SiteChrome from '@/components/layout/SiteChrome'
+import { SiteHeader, SiteFooter } from '@/components/layout/SiteChrome'
 import AmplifyProvider from '@/components/AmplifyProvider'
 import ThemeProvider from '@/components/ThemeProvider'
 
@@ -64,8 +64,9 @@ export default function RootLayout({
       <body>
         <AmplifyProvider>
           <ThemeProvider>
-            <SiteChrome />
+            <SiteHeader />
             <main>{children}</main>
+            <SiteFooter />
           </ThemeProvider>
         </AmplifyProvider>
       </body>
