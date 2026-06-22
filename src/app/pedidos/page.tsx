@@ -52,6 +52,8 @@ export default function PedidosPage() {
   const [reviewDone, setReviewDone]           = useState(false)
   const [sinpeOrder, setSinpeOrder]           = useState<NexoOrder | null>(null)
   const [sinpeCopied, setSinpeCopied]         = useState<string | null>(null)
+  const [tipoCambio, setTipoCambio]           = useState<{ venta: number; fecha: string } | null>(null)
+  const [tcLoading, setTcLoading]             = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -182,12 +184,16 @@ export default function PedidosPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-4">
                 {[
                   { label: 'Teléfono', value: '60716066' },
                   { label: 'Nombre', value: 'Alejandro Morales Sandi' },
                   { label: 'Descripción', value: `nexo-${sinpeOrder.trackingNumber}` },
-                  ...(sinpeOrder.totalPagado ? [{ label: 'Monto', value: `$${sinpeOrder.totalPagado.toFixed(2)}` }] : []),
+                  ...(sinpeOrder.totalPagado ? [{ label: 'Monto (USD)', value: `$${sinpeOrder.totalPagado.toFixed(2)}` }] : []),
+                  ...(sinpeOrder.totalPagado && tipoCambio ? [{
+                    label: 'Monto en colones',
+                    value: `₡${Math.round(sinpeOrder.totalPagado * tipoCambio.venta).toLocaleString('es-CR')}`,
+                  }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between bg-space-black rounded-xl px-4 py-3">
                     <div>
@@ -206,6 +212,27 @@ export default function PedidosPage() {
                     </button>
                   </div>
                 ))}
+
+                {/* Estado del tipo de cambio */}
+                {sinpeOrder.totalPagado && (
+                  <div className="px-1">
+                    {tcLoading ? (
+                      <p className="text-slate text-xs animate-pulse">Consultando tipo de cambio...</p>
+                    ) : tipoCambio ? (
+                      <p className="text-slate text-xs">
+                        TC venta: ₡{tipoCambio.venta.toFixed(2)}/USD · {tipoCambio.fecha} ·{' '}
+                        <a
+                          href="https://www.bccr.fi.cr"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-cyan transition-colors"
+                        >
+                          Fuente: BCCR
+                        </a>
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               <p className="text-slate text-xs text-center">
@@ -423,7 +450,17 @@ export default function PedidosPage() {
                         {isPayableStatus(order.status) ? (
                           <div className="flex items-center gap-2 shrink-0">
                             <button
-                              onClick={() => setSinpeOrder(order)}
+                              onClick={() => {
+                                setSinpeOrder(order)
+                                setSinpeCopied(null)
+                                setTipoCambio(null)
+                                setTcLoading(true)
+                                fetch('/api/tipo-cambio')
+                                  .then(r => r.json())
+                                  .then(data => { if (!data.error) setTipoCambio(data) })
+                                  .catch(() => {})
+                                  .finally(() => setTcLoading(false))
+                              }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-cyan/10 text-cyan border-cyan/30 hover:bg-cyan/20 transition-colors"
                             >
                               <Smartphone size={13} />
