@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
+import SiteChrome from '@/components/layout/SiteChrome'
 import AmplifyProvider from '@/components/AmplifyProvider'
 import ThemeProvider from '@/components/ThemeProvider'
-import WhatsAppButton from '@/components/ui/WhatsAppButton'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -66,10 +64,8 @@ export default function RootLayout({
       <body>
         <AmplifyProvider>
           <ThemeProvider>
-            <Navbar />
+            <SiteChrome />
             <main>{children}</main>
-            <Footer />
-            <WhatsAppButton />
           </ThemeProvider>
         </AmplifyProvider>
       </body>
