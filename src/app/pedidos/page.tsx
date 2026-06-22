@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Package, ArrowRight, Plus, X, CreditCard, MapPin, Star, MessageSquare } from 'lucide-react'
+import { Package, ArrowRight, Plus, X, CreditCard, MapPin, Star, MessageSquare, Smartphone, Copy, Check } from 'lucide-react'
 import { getMyOrders, addOrder } from '@/lib/orders'
 import { getMyAddresses } from '@/lib/addresses'
 import { createReview } from '@/lib/reviews'
@@ -22,12 +22,14 @@ const statusLabel: Record<string, { label: string; color: string }> = {
   entregado:       { label: 'Entregado',             color: 'bg-status-green/10 text-status-green' },
 }
 
-function payButtonProps(status: string): { label: string; enabled: boolean } {
-  if (status === 'bodega_cr' || status === 'pendiente_pago')
-    return { label: 'Próximamente', enabled: false }
-  if (status === 'pagado_en_ruta' || status === 'entregado')
-    return { label: 'Pagado', enabled: false }
-  return { label: 'Pendiente de facturar', enabled: false }
+function isPayableStatus(status: string) {
+  return status === 'bodega_cr' || status === 'pendiente_pago'
+}
+
+function paidOrPending(status: string): string | null {
+  if (status === 'pagado_en_ruta' || status === 'entregado') return 'Pagado'
+  if (!isPayableStatus(status)) return 'Pendiente de facturar'
+  return null
 }
 
 export default function PedidosPage() {
@@ -48,6 +50,8 @@ export default function PedidosPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewError, setReviewError]         = useState('')
   const [reviewDone, setReviewDone]           = useState(false)
+  const [sinpeOrder, setSinpeOrder]           = useState<NexoOrder | null>(null)
+  const [sinpeCopied, setSinpeCopied]         = useState<string | null>(null)
 
   useEffect(() => {
     if (!ready) return
@@ -156,6 +160,57 @@ export default function PedidosPage() {
                   Cancelar
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Sinpe Movil */}
+        {sinpeOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setSinpeOrder(null); setSinpeCopied(null) }} />
+            <div className="relative bg-midnight border border-white/10 rounded-2xl p-8 max-w-sm w-full shadow-2xl">
+              <button onClick={() => { setSinpeOrder(null); setSinpeCopied(null) }} className="absolute top-4 right-4 text-slate hover:text-ghost">
+                <X size={18} />
+              </button>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-cyan/10 flex items-center justify-center">
+                  <Smartphone size={20} className="text-cyan" />
+                </div>
+                <div>
+                  <h3 className="text-ghost font-semibold text-lg">Sinpe Movil</h3>
+                  <p className="text-slate text-xs">Realizá el pago desde tu app bancaria</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {[
+                  { label: 'Teléfono', value: '60716066' },
+                  { label: 'Nombre', value: 'Alejandro Morales Sandi' },
+                  { label: 'Descripción', value: `nexo-${sinpeOrder.trackingNumber}` },
+                  ...(sinpeOrder.totalPagado ? [{ label: 'Monto', value: `$${sinpeOrder.totalPagado.toFixed(2)}` }] : []),
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between bg-space-black rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-slate text-xs mb-0.5">{label}</p>
+                      <p className="text-ghost font-medium text-sm">{value}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(value)
+                        setSinpeCopied(label)
+                        setTimeout(() => setSinpeCopied(null), 2000)
+                      }}
+                      className="text-slate hover:text-cyan transition-colors p-1"
+                    >
+                      {sinpeCopied === label ? <Check size={15} className="text-cyan" /> : <Copy size={15} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-slate text-xs text-center">
+                Después de realizar el pago, te confirmaremos por correo.
+              </p>
             </div>
           </div>
         )}
@@ -364,19 +419,34 @@ export default function PedidosPage() {
                           </div>
                         </div>
 
-                        {/* Botón pago */}
-                        {(() => {
-                          const { label } = payButtonProps(order.status)
-                          return (
+                        {/* Botones pago */}
+                        {isPayableStatus(order.status) ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => setSinpeOrder(order)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-cyan/10 text-cyan border-cyan/30 hover:bg-cyan/20 transition-colors"
+                            >
+                              <Smartphone size={13} />
+                              Sinpe Movil
+                            </button>
                             <button
                               disabled
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60"
+                              title="Próximamente"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-50"
                             >
                               <CreditCard size={13} />
-                              {label}
+                              Tarjeta
                             </button>
-                          )
-                        })()}
+                          </div>
+                        ) : (
+                          <button
+                            disabled
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 bg-white/5 text-slate border-white/10 cursor-not-allowed opacity-60"
+                          >
+                            <CreditCard size={13} />
+                            {paidOrPending(order.status)}
+                          </button>
+                        )}
                       </div>
                     )
                   })}

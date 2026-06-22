@@ -412,6 +412,18 @@ export class NexoStack extends cdk.Stack {
                 ...(body.deliverySenas   && { deliverySenas:   body.deliverySenas.trim() }),
               }
               await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall(item) }))
+              // Enviar email de confirmación al usuario (asíncrono, no bloquea respuesta)
+              if (item.userEmail) {
+                lambdaClient.send(new InvokeCommand({
+                  FunctionName: process.env.EMAIL_FUNCTION_NAME,
+                  InvocationType: 'Event',
+                  Payload: Buffer.from(JSON.stringify({
+                    type: 'ORDER_CREATED',
+                    to: item.userEmail,
+                    data: { userName: item.userName, trackingNumber: item.trackingNumber },
+                  })),
+                })).catch(err => console.error(JSON.stringify({ event: 'EMAIL_INVOKE_ERROR', error: err.message })))
+              }
               return { statusCode: 201, headers, body: JSON.stringify(item) }
             }
 
@@ -844,8 +856,69 @@ export class NexoStack extends cdk.Stack {
             + '</body></html>'
         }
 
+        function buildOrderCreatedHtml(firstName, trackingNumber) {
+          return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>'
+            + '<body style="margin:0;padding:0;background:#F4F7FC;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FC;padding:32px 16px;"><tr><td align="center">'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">'
+            + '<tr><td style="background:#0A0E1A;border-radius:12px 12px 0 0;padding:28px 32px;text-align:center;">'
+            + '<div style="font-size:26px;font-weight:800;"><span style="color:#00D4FF;">nexo</span><span style="color:#fff;">courier</span></div>'
+            + '<div style="color:#8899AA;font-size:12px;margin-top:4px;letter-spacing:1px;text-transform:uppercase;">USA \\u2192 Costa Rica</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;padding:0 32px 24px;text-align:center;">'
+            + '<span style="display:inline-block;background:#00D4FF20;color:#00D4FF;font-size:11px;font-weight:700;letter-spacing:1.5px;padding:6px 16px;border-radius:100px;border:1px solid #00D4FF40;">PEDIDO RECIBIDO</span>'
+            + '</td></tr>'
+            + '<tr><td style="background:#fff;padding:36px 32px;">'
+            + '<div style="text-align:center;margin-bottom:24px;">'
+            + '<div style="font-size:48px;line-height:1;margin-bottom:16px;">\\uD83D\\uDCE6</div>'
+            + '<h1 style="margin:0;color:#0A0E1A;font-size:22px;font-weight:700;line-height:1.3;">\\u00A1Gracias por tu pedido!</h1>'
+            + '</div>'
+            + '<p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 12px;">Hola <strong>' + firstName + '</strong>,</p>'
+            + '<p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">Recibimos tu pedido correctamente. Estaremos notific\\u00E1ndote en cada paso del proceso, desde que sale de bodegas en Estados Unidos hasta que llegue a tus manos.</p>'
+            + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F7FC;border-radius:8px;margin-bottom:28px;">'
+            + '<tr><td style="padding:16px 20px;">'
+            + '<div style="color:#6B7280;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">N\\u00FAmero de seguimiento</div>'
+            + '<div style="color:#0A0E1A;font-size:18px;font-weight:700;font-family:Courier New,Courier,monospace;letter-spacing:1px;">' + trackingNumber + '</div>'
+            + '</td></tr></table>'
+            + '<div style="text-align:center;">'
+            + '<a href="https://www.nexocourier.com/pedidos" style="display:inline-block;background:#00D4FF;color:#0A0E1A;font-weight:700;font-size:14px;text-decoration:none;padding:14px 32px;border-radius:8px;">Ver mis pedidos \\u2192</a>'
+            + '</div>'
+            + '</td></tr>'
+            + '<tr><td style="background:#0A0E1A;border-radius:0 0 12px 12px;padding:20px 32px;text-align:center;">'
+            + '<p style="color:#4B5563;font-size:12px;margin:0 0 6px;">Confirmaci\\u00F3n del pedido <strong style="color:#6B7280;">' + trackingNumber + '</strong></p>'
+            + '<p style="margin:0;font-size:12px;"><span style="color:#00D4FF;font-weight:700;">nexo</span><span style="color:#6B7280;">courier</span> \\u00B7 <a href="https://www.nexocourier.com" style="color:#6B7280;text-decoration:none;">nexocourier.com</a></p>'
+            + '</td></tr>'
+            + '</table></td></tr></table>'
+            + '</body></html>'
+        }
+
         exports.handler = async (event) => {
           const { type, to, data } = event
+
+          if (type === 'ORDER_CREATED') {
+            const { userName, trackingNumber } = data
+            if (!to) return { success: false, reason: 'no_email' }
+            const firstName = (userName || '').split(' ')[0] || 'cliente'
+            const html = buildOrderCreatedHtml(firstName, trackingNumber)
+            const apiKey = await getResendApiKey()
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'nexo <notificaciones@nexocourier.com>',
+                to: [to],
+                subject: '\\uD83D\\uDCE6 \\u00A1Pedido recibido! \\u2014 Nexo Courier',
+                html,
+              }),
+            })
+            const result = await res.json()
+            if (!res.ok) {
+              console.error(JSON.stringify({ event: 'EMAIL_ERROR', type: 'ORDER_CREATED', error: result, to, trackingNumber }))
+              return { success: false, error: result }
+            }
+            console.log(JSON.stringify({ event: 'EMAIL_SENT', type: 'ORDER_CREATED', emailId: result.id, to, trackingNumber }))
+            return { success: true, emailId: result.id }
+          }
 
           if (type === 'STATUS_CHANGE') {
             const { userName, trackingNumber, status } = data
