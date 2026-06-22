@@ -1,17 +1,35 @@
 import { NextResponse } from 'next/server'
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
+
+const secretsClient = new SecretsManagerClient({ region: 'us-east-1' })
+
+let cachedToken: string | null = null
+
+async function getBccrToken(): Promise<string> {
+  if (cachedToken) return cachedToken
+  const cmd = new GetSecretValueCommand({ SecretId: 'BCCR_TOKEN' })
+  const res = await secretsClient.send(cmd)
+  cachedToken = res.SecretString ?? ''
+  return cachedToken
+}
 
 function costaRicaToday(): string {
   const now = new Date()
-  // UTC-6 (Costa Rica no usa horario de verano)
   const cr = new Date(now.getTime() - 6 * 60 * 60 * 1000)
   const yyyy = cr.getUTCFullYear()
   const mm = String(cr.getUTCMonth() + 1).padStart(2, '0')
   const dd = String(cr.getUTCDate()).padStart(2, '0')
-  return `${yyyy}/${mm}/${dd}` // formato requerido por BCCR SDDE
+  return `${yyyy}/${mm}/${dd}`
 }
 
 export async function GET() {
-  const token = process.env.BCCR_TOKEN
+  let token: string
+  try {
+    // En local usa env var, en producción lee de Secrets Manager
+    token = process.env.BCCR_TOKEN ?? await getBccrToken()
+  } catch {
+    return NextResponse.json({ error: true, reason: 'secret_fetch_failed' }, { status: 500 })
+  }
 
   if (!token) {
     return NextResponse.json({ error: true, reason: 'missing_token' }, { status: 500 })
@@ -27,11 +45,8 @@ export async function GET() {
 
   try {
     const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 43200 }, // cachea 12h — BCCR actualiza una vez al día
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      next: { revalidate: 43200 },
     })
 
     if (!res.ok) {
@@ -39,16 +54,13 @@ export async function GET() {
     }
 
     const json = await res.json()
-
     const valor = json?.datos?.[0]?.series?.[0]?.valorDatoPorPeriodo
     if (valor == null) {
       return NextResponse.json({ error: true, reason: 'no_data' }, { status: 502 })
     }
 
-    const venta = parseFloat(valor)
-    // Devolvemos fecha en formato DD/MM/YYYY para mostrar en el modal
     const [y, m, d] = fecha.split('/')
-    return NextResponse.json({ venta, fecha: `${d}/${m}/${y}` })
+    return NextResponse.json({ venta: parseFloat(valor), fecha: `${d}/${m}/${y}` })
   } catch {
     return NextResponse.json({ error: true, reason: 'network' }, { status: 502 })
   }
