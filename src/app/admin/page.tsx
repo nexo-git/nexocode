@@ -603,7 +603,7 @@ export default function AdminPage() {
 
       {/* ── Contenido principal ── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-[1400px] mx-auto px-6 py-8">
 
           {/* ── DASHBOARD ── */}
           {section === 'dashboard' && (
