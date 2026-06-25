@@ -95,6 +95,9 @@ export default function AdminPage() {
   const [formError, setFormError]       = useState('')
   const [submitting, setSubmitting]     = useState(false)
 
+  // ── Conversaciones pendientes (badge sidebar) ─────────────────────
+  const [pendingConvos, setPendingConvos] = useState(0)
+
   const apiUrl = process.env.NEXT_PUBLIC_ADMIN_API_URL
 
   useEffect(() => {
@@ -103,6 +106,25 @@ export default function AdminPage() {
     fetchOrders()
     fetchReviews()
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready])
+
+  useEffect(() => {
+    if (!ready) return
+    const poll = async () => {
+      try {
+        const headers = await authHeaders()
+        const res = await fetch('/api/admin/bot/conversations', { headers })
+        if (!res.ok) return
+        const data = await res.json()
+        const pending = (data.conversations ?? []).filter(
+          (c: { last_message_role: string }) => c.last_message_role === 'user'
+        ).length
+        setPendingConvos(pending)
+      } catch { /* silencioso */ }
+    }
+    poll()
+    const id = setInterval(poll, 30_000)
+    return () => clearInterval(id)
   }, [ready])
 
   useEffect(() => {
@@ -590,7 +612,12 @@ export default function AdminPage() {
               }`}
             >
               {icon}
-              {label}
+              <span className="flex-1">{label}</span>
+              {id === 'conversaciones' && pendingConvos > 0 && (
+                <span className="text-[11px] font-bold bg-cyan/20 text-cyan rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                  {pendingConvos > 9 ? '9+' : pendingConvos}
+                </span>
+              )}
             </button>
           ))}
         </nav>
