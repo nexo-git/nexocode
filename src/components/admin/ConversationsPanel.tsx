@@ -133,7 +133,7 @@ export default function ConversationsPanel() {
   const selectedConv = conversations.find(c => c.session_id === selectedId)
 
   return (
-    <div className="flex h-[72vh] min-h-[520px] -mx-6 -my-8 overflow-hidden">
+    <div className="flex h-[calc(100vh-160px)] min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-neutral-800">
 
       {/* ── Columna izquierda: lista ── */}
       <div className="w-72 shrink-0 border-r border-neutral-800 flex flex-col bg-neutral-900">
