@@ -664,7 +664,7 @@ export default function AdminPage() {
           {/* ── DASHBOARD ── */}
           {section === 'dashboard' && (
             <>
-              <div className="mb-8">
+              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Panel</p>
                 <h1 className="text-2xl font-bold text-ghost">Dashboard</h1>
               </div>
@@ -806,7 +806,7 @@ export default function AdminPage() {
           {/* ── PEDIDOS ── */}
           {section === 'pedidos' && (
             <>
-              <div className="mb-8">
+              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Gestión</p>
                 <h1 className="text-2xl font-bold text-ghost">Pedidos</h1>
               </div>
@@ -878,7 +878,7 @@ export default function AdminPage() {
           {/* ── RESEÑAS ── */}
           {section === 'resenas' && (
             <>
-              <div className="mb-8">
+              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Comunidad</p>
                 <h1 className="text-2xl font-bold text-ghost">Reseñas</h1>
               </div>

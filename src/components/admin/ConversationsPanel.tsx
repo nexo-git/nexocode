@@ -133,20 +133,20 @@ export default function ConversationsPanel() {
   const selectedConv = conversations.find(c => c.session_id === selectedId)
 
   return (
-    <div className="flex h-[calc(100vh-160px)] min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-neutral-800">
+    <div className="flex h-[calc(100vh-160px)] min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-white/10">
 
-      {/* ── Lista de conversaciones ──────────────────────────────────── */}
-      {/* Mobile: visible solo cuando NO hay selección. Desktop: siempre visible */}
+      {/* ── Lista de conversaciones ── */}
       <div className={`
-        border-r border-neutral-800 flex-col bg-neutral-900
+        border-r border-white/5 flex-col bg-midnight
         w-full md:w-72 md:shrink-0 md:flex
         ${selectedId ? 'hidden' : 'flex'}
       `}>
-        <div className="px-4 py-3 border-b border-neutral-800 flex items-center gap-2">
-          <MessagesSquare size={16} className="text-cyan-400" />
-          <span className="text-white font-semibold text-sm">Conversaciones</span>
+        {/* Header lista */}
+        <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
+          <MessagesSquare size={16} className="text-cyan" />
+          <span className="text-ghost font-semibold text-sm">Chats</span>
           {conversations.length > 0 && (
-            <span className="ml-auto text-xs bg-neutral-700 text-neutral-300 rounded-full px-2 py-0.5">
+            <span className="ml-auto text-xs bg-cyan/10 text-cyan rounded-full px-2 py-0.5 font-medium">
               {conversations.length}
             </span>
           )}
@@ -154,7 +154,7 @@ export default function ConversationsPanel() {
 
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <p className="text-neutral-500 text-xs text-center mt-10 px-4">
+            <p className="text-slate text-xs text-center mt-10 px-4">
               Sin conversaciones activas
             </p>
           ) : (
@@ -162,22 +162,24 @@ export default function ConversationsPanel() {
               <button
                 key={c.session_id}
                 onClick={() => setSelectedId(c.session_id)}
-                className={`w-full text-left px-4 py-3 border-b border-neutral-800/60 transition-colors ${
-                  selectedId === c.session_id ? 'bg-neutral-800' : 'hover:bg-neutral-800/50'
+                className={`w-full text-left px-4 py-3 border-b border-white/5 transition-colors ${
+                  selectedId === c.session_id ? 'bg-white/5' : 'hover:bg-white/5'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1 gap-2">
-                  <span className="text-white text-xs font-semibold truncate">+{c.phone_number}</span>
+                  <span className="text-ghost text-xs font-semibold truncate">+{c.phone_number}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                      c.human_mode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
+                      c.human_mode
+                        ? 'bg-status-yellow/10 text-status-yellow'
+                        : 'bg-status-green/10 text-status-green'
                     }`}>
                       {c.human_mode ? 'Humano' : 'Bot'}
                     </span>
-                    <span className="text-neutral-500 text-xs">{formatRelative(c.last_activity)}</span>
+                    <span className="text-slate text-xs">{formatRelative(c.last_activity)}</span>
                   </div>
                 </div>
-                <p className="text-neutral-400 text-xs truncate">
+                <p className="text-slate text-xs truncate">
                   {c.last_message_role === 'assistant' ? '↩ ' : ''}{c.last_message}
                 </p>
               </button>
@@ -186,35 +188,33 @@ export default function ConversationsPanel() {
         </div>
       </div>
 
-      {/* ── Hilo de mensajes ────────────────────────────────────────── */}
-      {/* Mobile: visible solo cuando HAY selección. Desktop: siempre visible */}
+      {/* ── Hilo de mensajes ── */}
       <div className={`
-        flex-col bg-neutral-950 min-w-0
+        flex-col bg-space-black min-w-0
         w-full md:flex-1 md:flex
         ${selectedId ? 'flex' : 'hidden'}
       `}>
         {!selectedId ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <MessagesSquare size={36} className="text-neutral-700" />
-            <p className="text-neutral-500 text-sm">Seleccioná una conversación</p>
+            <MessagesSquare size={36} className="text-white/10" />
+            <p className="text-slate text-sm">Seleccioná una conversación</p>
           </div>
         ) : (
           <>
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-neutral-800 flex items-center gap-3 bg-neutral-900 shrink-0">
-              {/* Botón volver — solo mobile */}
+            {/* Header chat */}
+            <div className="px-4 py-3 border-b border-white/5 flex items-center gap-3 bg-midnight shrink-0">
               <button
                 onClick={() => setSelectedId(null)}
-                className="md:hidden p-1.5 -ml-1 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-800"
+                className="md:hidden p-1.5 -ml-1 text-slate hover:text-ghost transition-colors rounded-lg hover:bg-white/5"
               >
                 <ArrowLeft size={18} />
               </button>
 
               <div className="flex-1 min-w-0">
-                <p className="text-white font-medium text-sm truncate">
+                <p className="text-ghost font-medium text-sm truncate">
                   +{selectedConv?.phone_number ?? selectedId.replace('whatsapp_', '')}
                 </p>
-                <p className="text-neutral-500 text-xs">WhatsApp</p>
+                <p className="text-slate text-xs">WhatsApp</p>
               </div>
 
               <button
@@ -222,8 +222,8 @@ export default function ConversationsPanel() {
                 disabled={toggling}
                 className={`shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
                   detail?.human_mode
-                    ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
-                    : 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25'
+                    ? 'bg-status-green/10 text-status-green hover:bg-status-green/20'
+                    : 'bg-status-yellow/10 text-status-yellow hover:bg-status-yellow/20'
                 }`}
               >
                 {detail?.human_mode ? 'Reanudar bot' : 'Pausar bot'}
@@ -236,12 +236,12 @@ export default function ConversationsPanel() {
                 <div key={msg.sk} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] md:max-w-[72%] px-3 py-2 rounded-xl text-sm ${
                     msg.role === 'assistant'
-                      ? 'bg-cyan-700 text-white rounded-br-sm'
-                      : 'bg-neutral-800 text-neutral-100 rounded-bl-sm'
+                      ? 'bg-cyan text-space-black rounded-br-sm'
+                      : 'bg-midnight text-ghost border border-white/5 rounded-bl-sm'
                   }`}>
                     <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
                     <p className={`text-xs mt-1 text-right ${
-                      msg.role === 'assistant' ? 'text-cyan-200/60' : 'text-neutral-500'
+                      msg.role === 'assistant' ? 'text-space-black/50' : 'text-slate'
                     }`}>
                       {new Date(msg.timestamp * 1000).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -252,7 +252,7 @@ export default function ConversationsPanel() {
             </div>
 
             {/* Input */}
-            <div className="px-4 py-3 border-t border-neutral-800 flex gap-2 items-end bg-neutral-900 shrink-0">
+            <div className="px-4 py-3 border-t border-white/5 flex gap-2 items-end bg-midnight shrink-0">
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -264,7 +264,7 @@ export default function ConversationsPanel() {
                 }}
                 placeholder="Escribí un mensaje..."
                 rows={1}
-                className="flex-1 bg-neutral-800 text-white text-sm rounded-lg px-3 py-2 resize-none outline-none border border-neutral-700 focus:border-cyan-500/50 placeholder:text-neutral-500 min-h-[38px] max-h-[120px]"
+                className="flex-1 bg-space-black text-ghost text-sm rounded-lg px-3 py-2 resize-none outline-none border border-white/10 focus:border-cyan/50 placeholder:text-slate min-h-[38px] max-h-[120px]"
                 style={{ height: 'auto' }}
                 onInput={e => {
                   const t = e.currentTarget
@@ -275,10 +275,10 @@ export default function ConversationsPanel() {
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="p-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors shrink-0"
+                className="p-2.5 bg-cyan hover:bg-cyan/80 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors shrink-0"
                 title="Enviar"
               >
-                <Send size={15} className="text-white" />
+                <Send size={15} className="text-space-black" />
               </button>
             </div>
           </>
