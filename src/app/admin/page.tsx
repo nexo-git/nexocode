@@ -7,7 +7,7 @@ import { getReviews, deleteReview } from '@/lib/reviews'
 import {
   Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star,
   LayoutDashboard, Users, ShoppingBag, MessageSquare, MessagesSquare, ChevronRight, ArrowLeft,
-  TrendingUp, Weight, DollarSign, Clock,
+  TrendingUp, Weight, DollarSign, Clock, Menu,
 } from 'lucide-react'
 import type { NexoReview } from '@/types/casillero'
 import Link from 'next/link'
@@ -94,6 +94,9 @@ export default function AdminPage() {
   const [formDesc, setFormDesc]         = useState('')
   const [formError, setFormError]       = useState('')
   const [submitting, setSubmitting]     = useState(false)
+
+  // ── Sidebar mobile ────────────────────────────────────────────────
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // ── Conversaciones pendientes (badge sidebar) ─────────────────────
   const [pendingConvos, setPendingConvos] = useState(0)
@@ -588,15 +591,39 @@ export default function AdminPage() {
   return (
     <div className="fixed inset-0 z-40 bg-space-black flex overflow-hidden">
 
+      {/* Overlay oscuro mobile */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Botón hamburger — solo mobile */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="md:hidden fixed top-3.5 left-3.5 z-50 p-2 bg-midnight border border-white/10 rounded-lg text-slate hover:text-ghost transition-colors"
+      >
+        <Menu size={18} />
+      </button>
+
       {/* ── Sidebar ── */}
-      <aside className="w-56 shrink-0 bg-midnight border-r border-white/5 flex flex-col overflow-y-auto">
+      <aside className={`w-56 shrink-0 bg-midnight border-r border-white/5 flex flex-col overflow-y-auto fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-white/5">
-          <span className="text-xl font-extrabold">
-            <span className="text-cyan">nexo</span>
-            <span className="text-ghost">courier</span>
-          </span>
-          <p className="text-slate text-[11px] mt-0.5 tracking-widest uppercase">Admin</p>
+        <div className="px-5 py-5 border-b border-white/5 flex items-start justify-between">
+          <div>
+            <span className="text-xl font-extrabold">
+              <span className="text-cyan">nexo</span>
+              <span className="text-ghost">courier</span>
+            </span>
+            <p className="text-slate text-[11px] mt-0.5 tracking-widest uppercase">Admin</p>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1 text-slate hover:text-ghost transition-colors mt-0.5"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Nav */}
@@ -604,7 +631,7 @@ export default function AdminPage() {
           {NAV_ITEMS.map(({ id, label, icon }) => (
             <button
               key={id}
-              onClick={() => { setSection(id); setSelectedUser(null) }}
+              onClick={() => { setSection(id); setSelectedUser(null); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-0.5 text-left ${
                 section === id
                   ? 'bg-cyan/10 text-cyan border-l-2 border-cyan'
