@@ -6,7 +6,7 @@ import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
 import { getReviews, deleteReview } from '@/lib/reviews'
 import {
   Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star,
-  LayoutDashboard, Users, ShoppingBag, MessageSquare, ChevronRight, ArrowLeft,
+  LayoutDashboard, Users, ShoppingBag, MessageSquare, MessagesSquare, ChevronRight, ArrowLeft,
   TrendingUp, Weight, DollarSign, Clock,
 } from 'lucide-react'
 import type { NexoReview } from '@/types/casillero'
@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import type { NexoOrder, OrderStatus } from '@/types/casillero'
+import ConversationsPanel from '@/components/admin/ConversationsPanel'
 
 interface CognitoUser {
   Username: string
@@ -49,13 +50,14 @@ async function authHeaders(): Promise<HeadersInit> {
   return { Authorization: token, 'Content-Type': 'application/json' }
 }
 
-type AdminSection = 'dashboard' | 'usuarios' | 'pedidos' | 'resenas'
+type AdminSection = 'dashboard' | 'usuarios' | 'pedidos' | 'resenas' | 'conversaciones'
 
 const NAV_ITEMS: { id: AdminSection; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard', label: 'Dashboard',  icon: <LayoutDashboard size={17} /> },
-  { id: 'usuarios',  label: 'Usuarios',   icon: <Users size={17} /> },
-  { id: 'pedidos',   label: 'Pedidos',    icon: <ShoppingBag size={17} /> },
-  { id: 'resenas',   label: 'Reseñas',    icon: <MessageSquare size={17} /> },
+  { id: 'dashboard',      label: 'Dashboard',       icon: <LayoutDashboard size={17} /> },
+  { id: 'usuarios',       label: 'Usuarios',        icon: <Users size={17} /> },
+  { id: 'pedidos',        label: 'Pedidos',         icon: <ShoppingBag size={17} /> },
+  { id: 'resenas',        label: 'Reseñas',         icon: <MessageSquare size={17} /> },
+  { id: 'conversaciones', label: 'Conversaciones',  icon: <MessagesSquare size={17} /> },
 ]
 
 export default function AdminPage() {
@@ -865,6 +867,10 @@ export default function AdminPage() {
               )}
             </>
           )}
+
+
+          {/* ── CONVERSACIONES ── */}
+          {section === 'conversaciones' && <ConversationsPanel />}
 
         </div>
       </main>
