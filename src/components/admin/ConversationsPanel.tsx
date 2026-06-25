@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchAuthSession } from 'aws-amplify/auth'
-import { Send, MessagesSquare } from 'lucide-react'
+import { Send, MessagesSquare, ArrowLeft } from 'lucide-react'
 import type { BotConversation, BotConversationDetail, BotMessage } from '@/types/bot'
 
 async function getIdToken(): Promise<string> {
@@ -135,8 +135,13 @@ export default function ConversationsPanel() {
   return (
     <div className="flex h-[calc(100vh-160px)] min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-neutral-800">
 
-      {/* ── Columna izquierda: lista ── */}
-      <div className="w-72 shrink-0 border-r border-neutral-800 flex flex-col bg-neutral-900">
+      {/* ── Lista de conversaciones ──────────────────────────────────── */}
+      {/* Mobile: visible solo cuando NO hay selección. Desktop: siempre visible */}
+      <div className={`
+        border-r border-neutral-800 flex-col bg-neutral-900
+        w-full md:w-72 md:shrink-0 md:flex
+        ${selectedId ? 'hidden' : 'flex'}
+      `}>
         <div className="px-4 py-3 border-b border-neutral-800 flex items-center gap-2">
           <MessagesSquare size={16} className="text-cyan-400" />
           <span className="text-white font-semibold text-sm">Conversaciones</span>
@@ -158,35 +163,36 @@ export default function ConversationsPanel() {
                 key={c.session_id}
                 onClick={() => setSelectedId(c.session_id)}
                 className={`w-full text-left px-4 py-3 border-b border-neutral-800/60 transition-colors ${
-                  selectedId === c.session_id
-                    ? 'bg-neutral-800'
-                    : 'hover:bg-neutral-800/50'
+                  selectedId === c.session_id ? 'bg-neutral-800' : 'hover:bg-neutral-800/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1 gap-2">
                   <span className="text-white text-xs font-semibold truncate">+{c.phone_number}</span>
-                  <span className={`shrink-0 text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                    c.human_mode
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-green-500/20 text-green-400'
-                  }`}>
-                    {c.human_mode ? 'Humano' : 'Bot'}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                      c.human_mode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
+                    }`}>
+                      {c.human_mode ? 'Humano' : 'Bot'}
+                    </span>
+                    <span className="text-neutral-500 text-xs">{formatRelative(c.last_activity)}</span>
+                  </div>
                 </div>
-                <div className="flex items-end justify-between gap-2">
-                  <p className="text-neutral-400 text-xs truncate flex-1">
-                    {c.last_message_role === 'assistant' ? '↩ ' : ''}{c.last_message}
-                  </p>
-                  <span className="shrink-0 text-neutral-500 text-xs">{formatRelative(c.last_activity)}</span>
-                </div>
+                <p className="text-neutral-400 text-xs truncate">
+                  {c.last_message_role === 'assistant' ? '↩ ' : ''}{c.last_message}
+                </p>
               </button>
             ))
           )}
         </div>
       </div>
 
-      {/* ── Columna derecha: hilo ── */}
-      <div className="flex-1 flex flex-col bg-neutral-950 min-w-0">
+      {/* ── Hilo de mensajes ────────────────────────────────────────── */}
+      {/* Mobile: visible solo cuando HAY selección. Desktop: siempre visible */}
+      <div className={`
+        flex-col bg-neutral-950 min-w-0
+        w-full md:flex-1 md:flex
+        ${selectedId ? 'flex' : 'hidden'}
+      `}>
         {!selectedId ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
             <MessagesSquare size={36} className="text-neutral-700" />
@@ -195,17 +201,26 @@ export default function ConversationsPanel() {
         ) : (
           <>
             {/* Header */}
-            <div className="px-5 py-3 border-b border-neutral-800 flex items-center justify-between gap-4 bg-neutral-900 shrink-0">
-              <div>
-                <p className="text-white font-medium text-sm">
+            <div className="px-4 py-3 border-b border-neutral-800 flex items-center gap-3 bg-neutral-900 shrink-0">
+              {/* Botón volver — solo mobile */}
+              <button
+                onClick={() => setSelectedId(null)}
+                className="md:hidden p-1.5 -ml-1 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-800"
+              >
+                <ArrowLeft size={18} />
+              </button>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium text-sm truncate">
                   +{selectedConv?.phone_number ?? selectedId.replace('whatsapp_', '')}
                 </p>
                 <p className="text-neutral-500 text-xs">WhatsApp</p>
               </div>
+
               <button
                 onClick={handleToggle}
                 disabled={toggling}
-                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                className={`shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
                   detail?.human_mode
                     ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
                     : 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25'
@@ -216,10 +231,10 @@ export default function ConversationsPanel() {
             </div>
 
             {/* Mensajes */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {detail?.messages.map(msg => (
                 <div key={msg.sk} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[72%] px-3 py-2 rounded-xl text-sm ${
+                  <div className={`max-w-[80%] md:max-w-[72%] px-3 py-2 rounded-xl text-sm ${
                     msg.role === 'assistant'
                       ? 'bg-cyan-700 text-white rounded-br-sm'
                       : 'bg-neutral-800 text-neutral-100 rounded-bl-sm'
@@ -247,7 +262,7 @@ export default function ConversationsPanel() {
                     handleSend()
                   }
                 }}
-                placeholder="Escribí un mensaje... (Enter para enviar)"
+                placeholder="Escribí un mensaje..."
                 rows={1}
                 className="flex-1 bg-neutral-800 text-white text-sm rounded-lg px-3 py-2 resize-none outline-none border border-neutral-700 focus:border-cyan-500/50 placeholder:text-neutral-500 min-h-[38px] max-h-[120px]"
                 style={{ height: 'auto' }}
