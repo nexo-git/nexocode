@@ -1,4 +1,5 @@
 import HeroSection from '@/components/sections/HeroSection'
+import StoreLogosSection from '@/components/sections/StoreLogosSection'
 import HowItWorksSection from '@/components/sections/HowItWorksSection'
 import NexoFielSection from '@/components/sections/NexoFielSection'
 import ValuesSection from '@/components/sections/ValuesSection'
@@ -14,6 +15,7 @@ export default function Home() {
   return (
     <>
       <HeroSection />
+      <StoreLogosSection />
 
       {/* Stats bar */}
       <div className="bg-midnight border-y border-white/5">

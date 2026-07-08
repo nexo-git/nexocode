@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative flex items-start overflow-hidden">
 
       {/* Grid */}
       <div
@@ -16,7 +16,7 @@ export default function HeroSection() {
       />
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-28 pb-20 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-32 pb-16 w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 
           {/* Left: Copy */}

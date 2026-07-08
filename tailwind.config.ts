@@ -37,6 +37,7 @@ const config: Config = {
         'fade-up':   'fadeUp 0.5s ease forwards',
         'float':     'float 6s ease-in-out infinite',
         'fade-in':   'fadeIn 0.6s ease forwards',
+        'marquee':   'marquee 30s linear infinite',
       },
       keyframes: {
         fadeUp: {
@@ -50,6 +51,10 @@ const config: Config = {
         fadeIn: {
           '0%':   { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        marquee: {
+          '0%':   { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
     },
