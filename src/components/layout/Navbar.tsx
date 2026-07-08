@@ -12,6 +12,9 @@ import { getCurrentUser, logoutUser } from '@/lib/casillero'
 import { useTheme } from '@/components/ThemeProvider'
 import type { NexoUser } from '@/types/casillero'
 
+// Toggle de tema oculto temporalmente (ver FORCE_DARK_MODE en ThemeProvider.tsx) — cambiar a true para mostrarlo de nuevo
+const SHOW_THEME_TOGGLE = false
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -95,13 +98,15 @@ export default function Navbar() {
         {/* CTA — desktop */}
         <div className="hidden md:flex items-center gap-2">
           {/* Theme toggle */}
-          <button
-            onClick={toggle}
-            aria-label="Cambiar tema"
-            className="p-2 rounded-lg text-slate hover:text-ghost hover:bg-white/5 transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+          {SHOW_THEME_TOGGLE && (
+            <button
+              onClick={toggle}
+              aria-label="Cambiar tema"
+              className="p-2 rounded-lg text-slate hover:text-ghost hover:bg-white/5 transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          )}
           {user ? (
             <>
               <div className="relative" ref={userMenuRef}>
@@ -257,13 +262,15 @@ export default function Navbar() {
             )}
 
             {/* Theme toggle — mobile */}
-            <button
-              onClick={toggle}
-              className="mt-2 flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm font-medium text-slate hover:text-ghost hover:bg-midnight transition-colors"
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-            </button>
+            {SHOW_THEME_TOGGLE && (
+              <button
+                onClick={toggle}
+                className="mt-2 flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm font-medium text-slate hover:text-ghost hover:bg-midnight transition-colors"
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              </button>
+            )}
           </nav>
         </div>
       )}

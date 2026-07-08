@@ -22,10 +22,19 @@ function applyTheme(t: Theme) {
   }
 }
 
+// Modo oscuro forzado temporalmente — cambiar a false para reactivar el modo claro / el toggle
+const FORCE_DARK_MODE = true
+
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light')
 
   useEffect(() => {
+    if (FORCE_DARK_MODE) {
+      applyTheme('dark')
+      setTheme('dark')
+      return
+    }
+
     async function init() {
       const saved = localStorage.getItem('nexo-theme') as Theme | null
       if (saved === 'light' || saved === 'dark') {

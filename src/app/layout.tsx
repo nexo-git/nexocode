@@ -56,6 +56,10 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
+        {/* Modo oscuro forzado temporalmente (ver FORCE_DARK_MODE en ThemeProvider.tsx) — evita el flash de tema claro antes de hidratar */}
+        <script
+          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('dark')" }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
