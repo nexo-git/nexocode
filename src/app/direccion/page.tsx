@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Plus, X, Trash2, Star, Edit, Check } from 'lucide-react'
+import Link from 'next/link'
+import { MapPin, Plus, X, Trash2, Star, Edit, Check, ArrowLeft } from 'lucide-react'
 import { getMyAddresses, createAddress, updateAddress, deleteAddress } from '@/lib/addresses'
 import { getProvinces, getCantons, getDistricts } from '@/lib/cr-geo'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -111,6 +112,14 @@ export default function DireccionPage() {
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="max-w-2xl mx-auto px-4 md:px-8">
+
+        <Link
+          href="/pedidos"
+          className="inline-flex items-center gap-2 text-slate hover:text-ghost text-sm transition-colors mb-6"
+        >
+          <ArrowLeft size={14} />
+          Volver a tus pedidos
+        </Link>
 
         {/* Header */}
         <div className="flex items-start justify-between mb-10">
