@@ -100,6 +100,17 @@ export default function Footer() {
             <Link href="/privacidad" className="text-slate text-xs hover:text-cyan transition-colors">Privacidad</Link>
             <Link href="/reembolsos" className="text-slate text-xs hover:text-cyan transition-colors">Reembolsos</Link>
             <p className="text-slate text-xs">Hecho en Costa Rica 🇨🇷</p>
+            <p className="text-slate text-xs">
+              Designed by{' '}
+              <a
+                href="https://condru.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-cyan transition-colors"
+              >
+                condru.com
+              </a>
+            </p>
           </div>
         </div>
       </div>
