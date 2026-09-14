@@ -137,7 +137,7 @@ export class NexoStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
-        const { DynamoDBClient, PutItemCommand, QueryCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb')
+        const { DynamoDBClient, PutItemCommand, GetItemCommand, QueryCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb')
         const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb')
         const { randomUUID } = require('crypto')
 
@@ -157,9 +157,29 @@ export class NexoStack extends cdk.Stack {
           const method = event.httpMethod
           const claims = event.requestContext?.authorizer?.claims || {}
           const userId = claims.sub
+          const rawGroups = claims['cognito:groups'] || ''
+          const groups = Array.isArray(rawGroups) ? rawGroups.join(',') : String(rawGroups)
+          const isAdmin = groups.includes('admin')
           const addressId = event.pathParameters?.addressId
+          const targetUserId = event.pathParameters?.userId
+
+          const forbidden = { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden' }) }
 
           try {
+            // GET /admin/users/{userId}/addresses â€” direcciones de otro usuario (solo admin)
+            if (method === 'GET' && targetUserId) {
+              if (!isAdmin) return forbidden
+              const result = await dynamo.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'userId-index',
+                KeyConditionExpression: 'userId = :uid',
+                ExpressionAttributeValues: marshall({ ':uid': targetUserId }),
+              }))
+              const items = (result.Items || []).map(i => unmarshall(i))
+              items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              return { statusCode: 200, headers, body: JSON.stringify(items) }
+            }
+
             // GET /addresses
             if (method === 'GET') {
               const result = await dynamo.send(new QueryCommand({
@@ -206,6 +226,15 @@ export class NexoStack extends cdk.Stack {
 
             // PUT /addresses/{addressId}
             if (method === 'PUT' && addressId) {
+              const current = await dynamo.send(new GetItemCommand({
+                TableName: TABLE_NAME,
+                Key: marshall({ addressId }),
+              }))
+              if (!current.Item) {
+                return { statusCode: 404, headers, body: JSON.stringify({ error: 'DirecciÃ³n no encontrada.' }) }
+              }
+              if (unmarshall(current.Item).userId !== userId && !isAdmin) return forbidden
+
               const body = JSON.parse(event.body || '{}')
               // If setting as default, clear default on others first
               if (body.isDefault === true) {
@@ -246,11 +275,21 @@ export class NexoStack extends cdk.Stack {
 
             // DELETE /addresses/{addressId}
             if (method === 'DELETE' && addressId) {
+              const current = await dynamo.send(new GetItemCommand({
+                TableName: TABLE_NAME,
+                Key: marshall({ addressId }),
+              }))
+              if (!current.Item) {
+                return { statusCode: 404, headers, body: JSON.stringify({ error: 'DirecciÃ³n no encontrada.' }) }
+              }
+              const ownerId = unmarshall(current.Item).userId
+              if (ownerId !== userId && !isAdmin) return forbidden
+
               const all = await dynamo.send(new QueryCommand({
                 TableName: TABLE_NAME,
                 IndexName: 'userId-index',
                 KeyConditionExpression: 'userId = :uid',
-                ExpressionAttributeValues: marshall({ ':uid': userId }),
+                ExpressionAttributeValues: marshall({ ':uid': ownerId }),
               }))
               if ((all.Count || 0) <= 1) {
                 return { statusCode: 400, headers, body: JSON.stringify({ error: 'Debe mantener al menos una direcciÃ³n.' }) }
@@ -309,11 +348,31 @@ export class NexoStack extends cdk.Stack {
           const method = event.httpMethod
           const path = event.path
           const userId = event.pathParameters?.userId
+          const claims = event.requestContext?.authorizer?.claims || {}
+          const rawGroups = claims['cognito:groups'] || ''
+          const groups = Array.isArray(rawGroups) ? rawGroups.join(',') : String(rawGroups)
+          const isAdmin = groups.includes('admin')
+
+          if (!isAdmin) {
+            return { statusCode: 403, headers, body: JSON.stringify({ error: 'Forbidden' }) }
+          }
 
           try {
             if (method === 'GET' && path === '/admin/users') {
-              const result = await cognito.send(new ListUsersCommand({ UserPoolId: USER_POOL_ID, Limit: 60 }))
-              return { statusCode: 200, headers, body: JSON.stringify(result.Users) }
+              // Paginado: ListUsers devuelve como mÃ¡ximo 60 por pÃ¡gina.
+              const users = []
+              let paginationToken = undefined
+              for (let page = 0; page < 10; page++) {
+                const result = await cognito.send(new ListUsersCommand({
+                  UserPoolId: USER_POOL_ID,
+                  Limit: 60,
+                  PaginationToken: paginationToken,
+                }))
+                users.push(...(result.Users || []))
+                paginationToken = result.PaginationToken
+                if (!paginationToken) break
+              }
+              return { statusCode: 200, headers, body: JSON.stringify(users) }
             }
             if (method === 'GET' && userId) {
               const result = await cognito.send(new AdminGetUserCommand({ UserPoolId: USER_POOL_ID, Username: userId }))
@@ -1127,7 +1186,7 @@ export class NexoStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.COGNITO,
     }
 
-    // Rutas /admin/users (sin auth por ahora â€” acceso interno)
+    // Rutas /admin/users (requieren token vÃ¡lido + grupo 'admin', verificado en el Lambda)
     const adminResource = api.root.addResource('admin')
     const usersResource = adminResource.addResource('users')
     const userResource = usersResource.addResource('{userId}')
@@ -1178,6 +1237,10 @@ export class NexoStack extends cdk.Stack {
     addressesResource.addMethod('POST', addressesIntegration, authOptions)
     addressResource.addMethod('PUT', addressesIntegration, authOptions)
     addressResource.addMethod('DELETE', addressesIntegration, authOptions)
+
+    // Ruta /admin/users/{userId}/addresses â€” direcciones de un cliente (solo admin)
+    const userAddressesResource = userResource.addResource('addresses')
+    userAddressesResource.addMethod('GET', addressesIntegration, authOptions)
 
     // â”€â”€â”€ Budget Alert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     new budgets.CfnBudget(this, 'NexoBudget', {

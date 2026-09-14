@@ -19,6 +19,18 @@ export async function getMyAddresses(): Promise<NexoAddress[]> {
   }
 }
 
+/** Direcciones de otro usuario — solo admin. */
+export async function getUserAddresses(userId: string): Promise<NexoAddress[]> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/admin/users/${userId}/addresses`, { headers })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
 export async function createAddress(data: {
   province: string
   canton: string

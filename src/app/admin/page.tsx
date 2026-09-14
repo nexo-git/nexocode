@@ -2,30 +2,20 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
-import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
+import { calculateLoyalty } from '@/lib/loyalty'
 import { getReviews, deleteReview } from '@/lib/reviews'
 import {
   Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star,
-  LayoutDashboard, Users, ShoppingBag, MessageSquare, MessagesSquare, ChevronRight, ArrowLeft,
-  TrendingUp, Weight, DollarSign, Clock, Menu,
+  LayoutDashboard, Users, ShoppingBag, MessageSquare, MessagesSquare,
+  TrendingUp, Clock, Menu,
 } from 'lucide-react'
 import type { NexoReview } from '@/types/casillero'
 import Link from 'next/link'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import type { NexoOrder, OrderStatus } from '@/types/casillero'
+import type { CognitoUser, NexoOrder, OrderStatus } from '@/types/casillero'
 import ConversationsPanel from '@/components/admin/ConversationsPanel'
-
-interface CognitoUser {
-  Username: string
-  Attributes: { Name: string; Value: string }[]
-  UserStatus: string
-  UserCreateDate: string
-}
-
-function getAttr(user: CognitoUser, name: string) {
-  return user.Attributes.find((a) => a.Name === name)?.Value ?? '—'
-}
+import UserDetailView, { getAttr } from '@/components/admin/UserDetailView'
 
 const statusOptions: { value: OrderStatus; label: string }[] = [
   { value: 'en_ruta',         label: 'En Ruta' },
@@ -459,133 +449,6 @@ export default function AdminPage() {
     )
   }
 
-  // ── Detalle de usuario ────────────────────────────────────────────
-  function UserDetailView({ user }: { user: CognitoUser }) {
-    const userOrders = useMemo(() =>
-      orders
-        .filter((o) => o.userId === user.Username)
-        .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-      [user.Username]
-    )
-
-    const stats = useMemo(() => {
-      const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
-      const totalKg = userOrders
-        .filter((o) => BILLABLE.includes(o.status) && o.peso != null)
-        .reduce((sum, o) => sum + o.peso!, 0)
-      const totalPaid = userOrders
-        .filter((o) => ['pagado_en_ruta', 'entregado'].includes(o.status) && o.totalPagado != null)
-        .reduce((sum, o) => sum + o.totalPagado!, 0)
-      const { cycleKg, milestoneIdx } = calculateLoyalty(userOrders)
-      const tier = milestoneIdx > 0 ? MILESTONES[milestoneIdx - 1] : null
-      const nextMilestone = MILESTONES[milestoneIdx]
-      return { totalKg, totalPaid, tier, cycleKg, nextMilestone }
-    }, [userOrders])
-
-    const firstName = getAttr(user, 'given_name')
-    const lastName  = getAttr(user, 'family_name')
-    const email     = getAttr(user, 'email')
-    const tipo      = getAttr(user, 'custom:tipo')
-    const movil     = getAttr(user, 'custom:movil')
-
-    return (
-      <div>
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-slate mb-6">
-          <button onClick={() => setSelectedUser(null)} className="flex items-center gap-1.5 hover:text-ghost transition-colors">
-            <ArrowLeft size={14} />
-            Usuarios
-          </button>
-          <ChevronRight size={14} />
-          <span className="text-ghost">{firstName} {lastName}</span>
-        </div>
-
-        {/* Profile card */}
-        <div className="bg-midnight border border-white/5 rounded-2xl p-6 mb-6 flex items-start gap-5">
-          <div className="w-12 h-12 rounded-xl bg-cyan/10 flex items-center justify-center shrink-0">
-            <span className="text-cyan font-bold text-lg">{firstName[0] ?? '?'}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-ghost font-semibold text-lg">{firstName} {lastName}</h2>
-            <p className="text-slate text-sm">{email}</p>
-            <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <span className="text-xs text-slate capitalize bg-white/5 px-2 py-0.5 rounded-md">{tipo}</span>
-              {movil !== '—' && <span className="text-xs text-slate">{movil}</span>}
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                user.UserStatus === 'CONFIRMED' ? 'bg-status-green/10 text-status-green' : 'bg-status-yellow/10 text-status-yellow'
-              }`}>
-                {user.UserStatus === 'CONFIRMED' ? 'Activo' : 'Pendiente'}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href={`/admin/${user.Username}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-slate hover:text-ghost hover:border-white/20 transition-colors"
-            >
-              <Edit size={13} />
-              Editar
-            </Link>
-            <button
-              onClick={() => handleDeleteUser(user.Username, email)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-slate hover:text-status-red hover:border-status-red/30 transition-colors"
-            >
-              <Trash2 size={13} />
-              Eliminar
-            </button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Total pedidos', value: userOrders.length, icon: <ShoppingBag size={16} className="text-cyan" /> },
-            { label: 'Kg enviados', value: `${stats.totalKg.toFixed(1)} kg`, icon: <Weight size={16} className="text-purple-400" /> },
-            { label: 'Total pagado', value: `$${stats.totalPaid.toFixed(2)}`, icon: <DollarSign size={16} className="text-status-green" /> },
-            {
-              label: 'Nexo Fiel',
-              value: stats.tier ? `${stats.tier.label} (${stats.tier.pct}%)` : 'Sin tier',
-              icon: <Star size={16} className="text-yellow-400" />,
-            },
-          ].map(({ label, value, icon }) => (
-            <div key={label} className="bg-midnight border border-white/5 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">{icon}<span className="text-slate text-xs">{label}</span></div>
-              <p className="text-ghost font-semibold text-lg">{value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Loyalty progress */}
-        {stats.nextMilestone && (
-          <div className="bg-midnight border border-white/5 rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-slate text-xs">Progreso Nexo Fiel</span>
-              <span className="text-slate text-xs">{stats.cycleKg.toFixed(1)} / {stats.nextMilestone.kg} kg → {stats.nextMilestone.label}</span>
-            </div>
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-cyan rounded-full transition-all"
-                style={{ width: `${Math.min(100, (stats.cycleKg / stats.nextMilestone.kg) * 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Orders */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-ghost font-semibold">Pedidos</h3>
-          <span className="text-slate text-xs">{userOrders.length} pedido{userOrders.length !== 1 ? 's' : ''}</span>
-        </div>
-        {userOrders.length === 0 ? (
-          <div className="border border-dashed border-white/10 rounded-2xl p-10 text-center">
-            <p className="text-slate text-sm">Este usuario no tiene pedidos.</p>
-          </div>
-        ) : (
-          <OrdersTable rows={userOrders} />
-        )}
-      </div>
-    )
-  }
 
   // ── Render principal ──────────────────────────────────────────────
   return (
@@ -708,7 +571,13 @@ export default function AdminPage() {
           {section === 'usuarios' && (
             <>
               {selectedUser ? (
-                <UserDetailView user={selectedUser} />
+                <UserDetailView
+                  user={selectedUser}
+                  orders={orders}
+                  onBack={() => setSelectedUser(null)}
+                  onDelete={handleDeleteUser}
+                  renderOrders={(rows) => <OrdersTable rows={rows} />}
+                />
               ) : (
                 <>
                   <div className="mb-8">

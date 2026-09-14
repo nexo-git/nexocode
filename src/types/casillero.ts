@@ -30,6 +30,16 @@ export interface NexoUser {
   createdAt: string
 }
 
+/** Shape crudo de un usuario tal como lo devuelve Cognito ListUsers. */
+export interface CognitoUser {
+  Username: string
+  Attributes: { Name: string; Value: string }[]
+  UserStatus: string
+  UserCreateDate: string
+  UserLastModifiedDate?: string
+  Enabled?: boolean
+}
+
 export interface NexoAddress {
   addressId: string
   userId: string
