@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexocourier.admin",
+      "sha256_cert_fingerprints": [
+        "9F:CB:3F:6D:18:57:91:59:12:A7:36:FC:07:FE:C9:0D:F4:2F:60:F5:03:05:74:9A:37:B3:CD:87:DD:F0:9C:9E"
+      ]
+    }
+  }
+]
