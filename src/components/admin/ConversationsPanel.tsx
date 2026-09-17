@@ -145,7 +145,7 @@ export default function ConversationsPanel() {
   const selectedConv = conversations.find(c => c.session_id === selectedId)
 
   return (
-    <div className="flex h-[calc(100vh-280px)] md:h-[calc(100vh-160px)] min-h-[420px] md:min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-white/10">
+    <div className="flex h-[calc(100vh-160px)] min-h-[420px] md:min-h-[520px] -mx-6 overflow-hidden rounded-xl border border-white/10">
 
       {/* ── Lista de conversaciones ── */}
       <div className={`
