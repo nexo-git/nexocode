@@ -7,24 +7,30 @@ import LoginForm from '@/components/casillero/LoginForm'
 import { getCurrentUser } from '@/lib/casillero'
 import type { NexoUser } from '@/types/casillero'
 
+// Solo rutas internas: evita open redirects tipo ?next=https://... o ?next=//evil.com
+function safeNext(next: string | null): string {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/casillero'
+}
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [ready, setReady] = useState(false)
   const resetOk = searchParams.get('reset') === 'ok'
+  const redirectTo = safeNext(searchParams.get('next'))
 
   useEffect(() => {
     getCurrentUser().then((user) => {
       if (user) {
-        router.replace('/casillero')
+        router.replace(redirectTo)
       } else {
         setReady(true)
       }
     })
-  }, [router])
+  }, [router, redirectTo])
 
   const handleSuccess = (_user: NexoUser) => {
-    router.push('/casillero')
+    router.push(redirectTo)
   }
 
   if (!ready) return null

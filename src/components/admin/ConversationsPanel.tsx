@@ -10,12 +10,24 @@ async function getIdToken(): Promise<string> {
   return session.tokens?.idToken?.toString() ?? ''
 }
 
-function formatRelative(ts: number): string {
-  const diff = Math.floor(Date.now() / 1000) - ts
+// El backend expone todos los timestamps en epoch MILISEGUNDOS.
+function formatRelative(tsMs: number): string {
+  const diff = Math.floor((Date.now() - tsMs) / 1000)
   if (diff < 60) return 'ahora'
   if (diff < 3600) return `${Math.floor(diff / 60)}m`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`
   return `${Math.floor(diff / 86400)}d`
+}
+
+// Siempre en hora de Costa Rica, sin importar la zona horaria del dispositivo (ej: la app Android).
+const CR_TZ = 'America/Costa_Rica'
+const crDayKey = new Intl.DateTimeFormat('en-CA', { timeZone: CR_TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+const crTime = new Intl.DateTimeFormat('es-CR', { timeZone: CR_TZ, hour: '2-digit', minute: '2-digit' })
+const crDateTime = new Intl.DateTimeFormat('es-CR', { timeZone: CR_TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+function formatMessageTime(tsMs: number): string {
+  const isToday = crDayKey.format(tsMs) === crDayKey.format(Date.now())
+  return (isToday ? crTime : crDateTime).format(tsMs)
 }
 
 export default function ConversationsPanel() {
@@ -105,7 +117,7 @@ export default function ConversationsPanel() {
       sk: `${Date.now()}#local`,
       role: 'assistant',
       content: input.trim(),
-      timestamp: Math.floor(Date.now() / 1000),
+      timestamp: Date.now(),
     }
     const prevMessages = detail.messages
     setDetail(d => d ? { ...d, messages: [...d.messages, msg] } : d)
@@ -243,7 +255,7 @@ export default function ConversationsPanel() {
                     <p className={`text-xs mt-1 text-right ${
                       msg.role === 'assistant' ? 'text-space-black/50' : 'text-slate'
                     }`}>
-                      {new Date(msg.timestamp * 1000).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
+                      {formatMessageTime(msg.timestamp)}
                     </p>
                   </div>
                 </div>
