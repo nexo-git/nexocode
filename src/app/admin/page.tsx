@@ -7,7 +7,7 @@ import { getReviews, deleteReview } from '@/lib/reviews'
 import {
   Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star,
   LayoutDashboard, Users, ShoppingBag, MessageSquare, MessagesSquare,
-  TrendingUp, Clock, Menu,
+  TrendingUp, Clock,
 } from 'lucide-react'
 import type { NexoReview } from '@/types/casillero'
 import Link from 'next/link'
@@ -52,7 +52,7 @@ const NAV_ITEMS: { id: AdminSection; label: string; icon: React.ReactNode }[] = 
 
 export default function AdminPage() {
   const { ready } = useCurrentUser({ adminOnly: true })
-  const [section, setSection] = useState<AdminSection>('pedidos')
+  const [section, setSection] = useState<AdminSection>('dashboard')
   const [selectedUser, setSelectedUser] = useState<CognitoUser | null>(null)
 
   // ── Usuarios ──────────────────────────────────────────────────────
@@ -85,10 +85,7 @@ export default function AdminPage() {
   const [formError, setFormError]       = useState('')
   const [submitting, setSubmitting]     = useState(false)
 
-  // ── Sidebar mobile ────────────────────────────────────────────────
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  // ── Conversaciones pendientes (badge sidebar) ─────────────────────
+  // ── Conversaciones pendientes (badge sidebar / menú inferior) ──────
   const [pendingConvos, setPendingConvos] = useState(0)
 
   const apiUrl = process.env.NEXT_PUBLIC_ADMIN_API_URL
@@ -454,39 +451,23 @@ export default function AdminPage() {
   return (
     <div className="fixed inset-0 z-40 bg-space-black flex overflow-hidden">
 
-      {/* Overlay oscuro mobile */}
-      {sidebarOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* ── Header superior — solo mobile/app ── */}
+      <header className="md:hidden fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-center bg-midnight border-b border-white/5">
+        <span className="text-lg font-extrabold">
+          <span className="text-cyan">nexo</span>
+          <span className="text-ghost">courier</span>
+        </span>
+      </header>
 
-      {/* Botón hamburger — solo mobile */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed top-3.5 left-3.5 z-50 p-2 bg-midnight border border-white/10 rounded-lg text-slate hover:text-ghost transition-colors"
-      >
-        <Menu size={18} />
-      </button>
-
-      {/* ── Sidebar ── */}
-      <aside className={`w-56 shrink-0 bg-midnight border-r border-white/5 flex flex-col overflow-y-auto fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* ── Sidebar — solo escritorio ── */}
+      <aside className="hidden md:flex w-56 shrink-0 bg-midnight border-r border-white/5 flex-col overflow-y-auto">
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-white/5 flex items-start justify-between">
-          <div>
-            <span className="text-xl font-extrabold">
-              <span className="text-cyan">nexo</span>
-              <span className="text-ghost">courier</span>
-            </span>
-            <p className="text-slate text-[11px] mt-0.5 tracking-widest uppercase">Admin</p>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 text-slate hover:text-ghost transition-colors mt-0.5"
-          >
-            <X size={16} />
-          </button>
+        <div className="px-5 py-5 border-b border-white/5">
+          <span className="text-xl font-extrabold">
+            <span className="text-cyan">nexo</span>
+            <span className="text-ghost">courier</span>
+          </span>
+          <p className="text-slate text-[11px] mt-0.5 tracking-widest uppercase">Admin</p>
         </div>
 
         {/* Nav */}
@@ -494,7 +475,7 @@ export default function AdminPage() {
           {NAV_ITEMS.map(({ id, label, icon }) => (
             <button
               key={id}
-              onClick={() => { setSection(id); setSelectedUser(null); setSidebarOpen(false) }}
+              onClick={() => { setSection(id); setSelectedUser(null) }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-0.5 text-left ${
                 section === id
                   ? 'bg-cyan/10 text-cyan border-l-2 border-cyan'
@@ -520,14 +501,34 @@ export default function AdminPage() {
         </div>
       </aside>
 
+      {/* ── Menú inferior — solo mobile/app ── */}
+      <nav className="md:hidden fixed bottom-4 inset-x-4 z-50 flex items-center justify-around bg-midnight border border-white/10 rounded-2xl shadow-lg py-2.5">
+        {NAV_ITEMS.map(({ id, icon }) => (
+          <button
+            key={id}
+            onClick={() => { setSection(id); setSelectedUser(null) }}
+            className={`relative p-2.5 rounded-xl transition-colors ${
+              section === id ? 'bg-cyan/10 text-cyan' : 'text-slate hover:text-ghost'
+            }`}
+          >
+            {icon}
+            {id === 'conversaciones' && pendingConvos > 0 && (
+              <span className="absolute -top-1 -right-1 text-[10px] font-bold bg-cyan text-space-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center leading-none">
+                {pendingConvos > 9 ? '9+' : pendingConvos}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+
       {/* ── Contenido principal ── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="max-w-[1400px] mx-auto px-6 pt-20 pb-28 md:py-8">
 
           {/* ── DASHBOARD ── */}
           {section === 'dashboard' && (
             <>
-              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
+              <div className="mb-8 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Panel</p>
                 <h1 className="text-2xl font-bold text-ghost">Dashboard</h1>
               </div>
@@ -580,7 +581,7 @@ export default function AdminPage() {
                 />
               ) : (
                 <>
-                  <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
+                  <div className="mb-8 text-center md:text-left">
                     <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Gestión</p>
                     <h1 className="text-2xl font-bold text-ghost">Usuarios</h1>
                   </div>
@@ -675,7 +676,7 @@ export default function AdminPage() {
           {/* ── PEDIDOS ── */}
           {section === 'pedidos' && (
             <>
-              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
+              <div className="mb-8 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Gestión</p>
                 <h1 className="text-2xl font-bold text-ghost">Pedidos</h1>
               </div>
@@ -747,7 +748,7 @@ export default function AdminPage() {
           {/* ── RESEÑAS ── */}
           {section === 'resenas' && (
             <>
-              <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
+              <div className="mb-8 text-center md:text-left">
                 <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Comunidad</p>
                 <h1 className="text-2xl font-bold text-ghost">Reseñas</h1>
               </div>
