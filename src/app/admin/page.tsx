@@ -580,7 +580,7 @@ export default function AdminPage() {
                 />
               ) : (
                 <>
-                  <div className="mb-8">
+                  <div className="mb-8 pt-8 md:pt-0 text-center md:text-left">
                     <p className="text-cyan text-xs font-semibold tracking-widest uppercase mb-1">Gestión</p>
                     <h1 className="text-2xl font-bold text-ghost">Usuarios</h1>
                   </div>
