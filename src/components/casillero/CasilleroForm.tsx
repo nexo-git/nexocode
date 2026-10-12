@@ -209,7 +209,16 @@ export default function CasilleroForm({ onSuccess }: CasilleroFormProps) {
       <label className="flex items-start gap-3 cursor-pointer">
         <input type="checkbox" {...register('terminos')} className="accent-cyan mt-0.5 w-4 h-4 shrink-0" />
         <span className="text-slate text-sm">
-          Acepto los términos y condiciones del servicio de casillero Nexo.
+          Acepto los{' '}
+          {/* Nueva pestaña: así no se pierde lo que ya llenó en el formulario */}
+          <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-cyan underline underline-offset-2 hover:text-cyan/80">
+            términos y condiciones
+          </a>{' '}
+          y la{' '}
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-cyan underline underline-offset-2 hover:text-cyan/80">
+            política de privacidad
+          </a>{' '}
+          del servicio de casillero Nexo.
         </span>
       </label>
       {errors.terminos && <p className={errorClass}>{errors.terminos.message}</p>}
