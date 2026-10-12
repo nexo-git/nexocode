@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import type { NexoOrder } from '@/types/casillero'
 import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
 
@@ -19,6 +21,8 @@ function milestoneBottom(kg: number) {
 }
 
 export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
+  // En mobile arranca plegado (ocupa mucho alto); en desktop siempre se ve completo
+  const [open, setOpen] = useState(false)
   const { cycleKg, milestoneIdx } = calculateLoyalty(orders)
   const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
   const totalHistoricalKg = orders
@@ -28,14 +32,30 @@ export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
   const activeDiscount = milestoneIdx > 0 ? MILESTONES[milestoneIdx - 1].pct : null
   const fillPx         = Math.min(cycleKg / 50, 1) * EFF_H
   const kgToNext       = (next.kg - cycleKg).toFixed(1)
+  const summary        = activeDiscount
+    ? `✦ ${activeDiscount}% activo`
+    : cycleKg > 0 ? `${kgToNext} kg más → ${next.pct}% off` : 'Empezá a acumular'
 
   return (
-    <div className="rounded-2xl border border-black/[0.06] bg-midnight p-5 dark:border-white/10">
+    <div className="rounded-2xl border border-black/[0.06] bg-midnight p-4 lg:p-5 dark:border-white/10">
 
-      {/* Header */}
-      <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: BRAND }}>
-        Nexo Fiel
-      </p>
+      {/* Header — en mobile es el botón del desplegable */}
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 text-left lg:cursor-default"
+      >
+        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: BRAND }}>
+          Nexo Fiel
+        </span>
+        <span className="flex items-center gap-2 lg:hidden">
+          {!open && <span className="text-xs font-semibold" style={{ color: BRAND }}>{summary}</span>}
+          <ChevronDown size={16} className={`text-slate transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+
+      <div className={`${open ? 'block' : 'hidden'} lg:block mt-3`}>
 
       {/* Active discount badge */}
       {activeDiscount ? (
@@ -151,6 +171,7 @@ export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
       <p className="text-slate text-[10px] mt-1">
         ⓘ Solo cuentan pedidos <span className="text-ghost font-semibold">Entregados</span>. El descuento aplica al alcanzar un hito.
       </p>
+      </div>
     </div>
   )
 }
