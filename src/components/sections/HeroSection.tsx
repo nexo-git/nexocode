@@ -116,14 +116,14 @@ export default function HeroSection() {
                     <p className="text-slate text-xs mt-0.5">Peso</p>
                   </div>
                   <div className="rounded-xl px-3 py-2.5 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                    <p className="text-ghost font-bold text-sm">2 días</p>
-                    <p className="text-slate text-xs mt-0.5">Estimado</p>
+                    <p className="text-ghost font-bold text-sm">5–8 días</p>
+                    <p className="text-slate text-xs mt-0.5">Hábiles</p>
                   </div>
                 </div>
 
               </div>
               <p className="text-center text-xs mt-4" style={{ color: 'rgba(138,149,168,0.5)' }}>
-                Rastreo en tiempo real incluido
+                Aviso por correo en cada etapa
               </p>
             </div>
           </div>

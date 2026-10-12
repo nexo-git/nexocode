@@ -18,7 +18,7 @@ export default function Footer() {
               USA → Costa Rica.
             </p>
             <div className="flex items-center gap-4 mt-5">
-              <a href="https://instagram.com/nexo.cr" target="_blank" rel="noopener noreferrer"
+              <a href="https://instagram.com/nexo.courier" target="_blank" rel="noopener noreferrer"
                 className="text-slate hover:text-cyan transition-colors" aria-label="Instagram">
                 <Camera size={18} />
               </a>

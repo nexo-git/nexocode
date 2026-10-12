@@ -8,7 +8,7 @@ import CtaBannerSection from '@/components/sections/CtaBannerSection'
 
 const stats = [
   { value: '$14/kg', label: 'tarifa por kilo' },
-  { value: '6 días', label: 'tiempo promedio' },
+  { value: '5–8 días', label: 'hábiles de entrega' },
 ]
 
 export default function Home() {

@@ -4,7 +4,7 @@ const values = [
   {
     icon: Eye,
     title: 'Transparencia total',
-    description: 'Rastreo en tiempo real. Sabés exactamente dónde está tu paquete en cada momento. Sin letra pequeña.',
+    description: 'Seguís cada etapa de tu pedido desde tu cuenta y te avisamos por correo en cada cambio. Sin letra pequeña.',
   },
   {
     icon: DollarSign,
@@ -14,7 +14,7 @@ const values = [
   {
     icon: MessageCircle,
     title: 'Atención 24/7',
-    description: 'Escribinos por WhatsApp a cualquier hora. Respuesta rápida, sin esperas.',
+    description: 'Escribinos por WhatsApp a cualquier hora: nuestro asistente con IA te responde al instante y, si hace falta, te atiende una persona.',
   },
   {
     icon: Zap,

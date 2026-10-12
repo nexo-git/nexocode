@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'nexo — Tu puente entre dos mundos',
-  description: 'Courier y envíos USA → Costa Rica. Rastreo en tiempo real, precios claros, atención 24/7.',
+  description: 'Courier y envíos USA → Costa Rica. Seguimiento de cada envío, $14 por kilo y asistente 24/7 por WhatsApp.',
   icons: {
     icon: '/XNEX0.png',
   },
@@ -45,7 +45,7 @@ const jsonLd = {
     contactOption: 'TollFree',
   },
   areaServed: ['CR', 'US'],
-  description: 'Courier y envíos USA → Costa Rica con rastreo en tiempo real y precios claros.',
+  description: 'Courier y envíos USA → Costa Rica con seguimiento de cada envío y precios claros.',
 }
 
 export default function RootLayout({

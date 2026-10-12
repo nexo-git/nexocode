@@ -7,7 +7,7 @@ const contactItems = [
     icon: MessageCircle,
     label: 'WhatsApp',
     value: '+506 6113-2863',
-    description: 'Respuesta en menos de 1 hora en horario laboral.',
+    description: 'Asistente con IA 24/7. Si tu caso lo necesita, te atiende una persona del equipo.',
     cta: { label: 'Escribir ahora', href: whatsappLink('Hola nexo, quiero más información.') },
   },
   {
@@ -20,8 +20,8 @@ const contactItems = [
   {
     icon: Clock,
     label: 'Horario de atención',
-    value: '24 horas, 7 días a la semana',
-    description: 'Siempre disponibles para atenderte.',
+    value: 'Asistente 24/7 por WhatsApp',
+    description: 'Atención de una persona en horario laboral.',
     cta: null,
   },
   {
@@ -41,7 +41,7 @@ export default function ContactSection() {
           <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Contacto</p>
           <h2 className="text-4xl md:text-5xl font-bold text-ghost mb-4">Estamos para ayudarte</h2>
           <p className="text-slate text-lg max-w-xl mx-auto">
-            Disponible las 24 horas, los 7 días de la semana. Respuesta rápida para que nunca te quedés sin información sobre tu envío.
+            Nuestro asistente con IA responde 24/7 por WhatsApp, y una persona del equipo toma tu caso cuando hace falta.
           </p>
         </div>
 

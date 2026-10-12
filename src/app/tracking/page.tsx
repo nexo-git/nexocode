@@ -11,7 +11,7 @@ export default function TrackingPage() {
         <p className="text-cyan text-sm font-semibold tracking-widest uppercase mb-3">Rastreo</p>
         <h1 className="text-4xl font-bold text-ghost mb-4">Rastreá tu paquete</h1>
         <p className="text-slate text-lg mb-8">
-          Ingresá a tu casillero para ver el estado actualizado de todos tus envíos en tiempo real,
+          Ingresá a tu casillero para ver el estado actualizado de todos tus envíos (te avisamos por correo en cada etapa),
           o escribinos directamente por WhatsApp y te ayudamos al instante.
         </p>
 
