@@ -430,6 +430,71 @@ export class NexoStack extends cdk.Stack {
         const lambdaClient = new LambdaClient({})
         const TABLE_NAME = process.env.TABLE_NAME
 
+        // Nexo Fiel: misma regla que src/lib/loyalty.ts (calculateLoyalty). El descuento aplica solo
+        // al pedido que alcanza o supera un hito y el contador vuelve a 0 kg despues de llegar a Oro.
+        const MILESTONES = [{ kg: 10, pct: 3 }, { kg: 25, pct: 5 }, { kg: 50, pct: 7 }]
+        const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
+        // Ya cobrados: su descuento queda congelado con lo que se pago
+        const PAID = ['pagado_en_ruta', 'entregado']
+
+        function loyaltyDiscounts(orders) {
+          const discounts = new Map()
+          const billable = orders
+            .filter(o => BILLABLE.includes(o.status) && o.peso != null)
+            .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+          let cycleKg = 0
+          let milestoneIdx = 0
+          for (const o of billable) {
+            cycleKg += o.peso
+            let earned = 0
+            while (milestoneIdx < MILESTONES.length && cycleKg >= MILESTONES[milestoneIdx].kg) {
+              earned = MILESTONES[milestoneIdx].pct
+              milestoneIdx++
+              if (milestoneIdx >= MILESTONES.length) { cycleKg = 0; milestoneIdx = 0; break }
+            }
+            discounts.set(o.orderId, earned)
+          }
+          return discounts
+        }
+
+        // Recalcula y guarda totalBase/discountPct/totalFinal de todos los pedidos no pagados del usuario
+        // (cambiar el peso o el estado de uno puede mover cual pedido cruza el hito).
+        // Devuelve los montos del pedido actualizado, o null si ya esta pagado.
+        async function recalcLoyalty(updated) {
+          const userOrders = []
+          let lastKey
+          do {
+            const page = await dynamo.send(new QueryCommand({
+              TableName: TABLE_NAME,
+              IndexName: 'userId-index',
+              KeyConditionExpression: 'userId = :uid',
+              ExpressionAttributeValues: marshall({ ':uid': updated.userId }),
+              ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
+            }))
+            userOrders.push(...(page.Items || []).map(i => unmarshall(i)))
+            lastKey = page.LastEvaluatedKey
+          } while (lastKey)
+          // El GSI es eventualmente consistente: usar la version recien actualizada de este pedido
+          const orders = userOrders.filter(o => o.orderId !== updated.orderId).concat(updated)
+          const discounts = loyaltyDiscounts(orders)
+          let result = null
+          for (const o of orders) {
+            if (PAID.includes(o.status)) continue
+            const totalBase = o.totalPagado || 0
+            const discountPct = discounts.get(o.orderId) || 0
+            const totalFinal = Math.round(totalBase * (1 - discountPct / 100) * 100) / 100
+            if (o.orderId === updated.orderId) result = { totalBase, discountPct, totalFinal }
+            if (o.totalBase === totalBase && o.discountPct === discountPct && o.totalFinal === totalFinal) continue
+            await dynamo.send(new UpdateItemCommand({
+              TableName: TABLE_NAME,
+              Key: marshall({ orderId: o.orderId }),
+              UpdateExpression: 'SET totalBase = :tb, discountPct = :dp, totalFinal = :tf',
+              ExpressionAttributeValues: marshall({ ':tb': totalBase, ':dp': discountPct, ':tf': totalFinal }),
+            }))
+          }
+          return result
+        }
+
         exports.handler = async (event) => {
           const allowed = (process.env.CORS_ORIGINS || 'https://www.nexocourier.com').split(',')
           const reqOrigin = (event.headers || {})['origin'] || (event.headers || {})['Origin'] || ''
@@ -574,60 +639,21 @@ export class NexoStack extends cdk.Stack {
                 ExpressionAttributeValues: marshall(exprValues),
                 ReturnValues: 'ALL_NEW',
               }))
-              if (body.status && updateResult.Attributes) {
-                const updated = unmarshall(updateResult.Attributes)
-                let discountPct = 0
-                let totalBase = updated.totalPagado || 0
-                let totalFinal = totalBase
-                if (body.status === 'bodega_cr' && updated.userId && totalBase) {
-                  try {
-                    // Nexo Fiel: misma regla que src/lib/loyalty.ts (calculateLoyalty).
-                    // El descuento aplica solo al pedido que alcanza o supera un hito
-                    // y el contador vuelve a 0 kg despues de llegar a Oro.
-                    const MILESTONES = [{ kg: 10, pct: 3 }, { kg: 25, pct: 5 }, { kg: 50, pct: 7 }]
-                    const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
-                    const userOrders = []
-                    let lastKey
-                    do {
-                      const page = await dynamo.send(new QueryCommand({
-                        TableName: TABLE_NAME,
-                        IndexName: 'userId-index',
-                        KeyConditionExpression: 'userId = :uid',
-                        ExpressionAttributeValues: marshall({ ':uid': updated.userId }),
-                        ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
-                      }))
-                      userOrders.push(...(page.Items || []).map(i => unmarshall(i)))
-                      lastKey = page.LastEvaluatedKey
-                    } while (lastKey)
-                    // El GSI es eventualmente consistente: usar la version recien actualizada de este pedido
-                    const billable = userOrders
-                      .filter(o => o.orderId !== orderId)
-                      .concat(updated)
-                      .filter(o => BILLABLE.includes(o.status) && o.peso != null)
-                      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                    let cycleKg = 0
-                    let milestoneIdx = 0
-                    for (const o of billable) {
-                      cycleKg += o.peso
-                      let earned = 0
-                      while (milestoneIdx < MILESTONES.length && cycleKg >= MILESTONES[milestoneIdx].kg) {
-                        earned = MILESTONES[milestoneIdx].pct
-                        milestoneIdx++
-                        if (milestoneIdx >= MILESTONES.length) { cycleKg = 0; milestoneIdx = 0; break }
-                      }
-                      if (o.orderId === orderId) { discountPct = earned; break }
-                    }
-                    totalFinal = Math.round(totalBase * (1 - discountPct / 100) * 100) / 100
-                  } catch (e) {
-                    console.error(JSON.stringify({ event: 'LOYALTY_CALC_ERROR', error: e.message }))
-                  }
-                  await dynamo.send(new UpdateItemCommand({
-                    TableName: TABLE_NAME,
-                    Key: marshall({ orderId }),
-                    UpdateExpression: 'SET totalBase = :tb, discountPct = :dp, totalFinal = :tf',
-                    ExpressionAttributeValues: marshall({ ':tb': totalBase, ':dp': discountPct, ':tf': totalFinal }),
-                  }))
+              const updated = updateResult.Attributes ? unmarshall(updateResult.Attributes) : null
+              // Nexo Fiel se recalcula ante cualquier cambio de estado, peso o monto
+              let amounts = null
+              if (updated && updated.userId && (body.status || body.peso !== undefined || body.totalPagado !== undefined)) {
+                try {
+                  amounts = await recalcLoyalty(updated)
+                } catch (e) {
+                  console.error(JSON.stringify({ event: 'LOYALTY_CALC_ERROR', error: e.message, orderId }))
                 }
+              }
+              if (body.status && updated) {
+                // Pedido ya pagado (o error al recalcular): usar lo guardado
+                const totalBase = amounts ? amounts.totalBase : (updated.totalBase ?? updated.totalPagado ?? 0)
+                const discountPct = amounts ? amounts.discountPct : (updated.discountPct ?? 0)
+                const totalFinal = amounts ? amounts.totalFinal : (updated.totalFinal ?? totalBase)
                 console.log(JSON.stringify({ event: 'EMAIL_INVOKE_START', to: updated.userEmail, status: body.status, orderId }))
                 try {
                   await lambdaClient.send(new InvokeCommand({

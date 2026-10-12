@@ -54,7 +54,7 @@ export default function NexoFielSection() {
             Mientras más enviás,<br className="hidden sm:block" /> más ahorrás
           </h2>
           <p className="text-slate max-w-xl mx-auto">
-            Cada kilo cuenta. Acumulá peso en tus pedidos entregados y desbloqueá descuentos automáticos en futuros envíos.
+            Cada kilo cuenta y desbloquea descuentos automáticos en tus envíos.
           </p>
         </div>
 
@@ -70,7 +70,7 @@ export default function NexoFielSection() {
                 <span className={`text-sm font-bold uppercase tracking-wider ${tier.color}`}>{tier.name}</span>
               </div>
               <p className="text-ghost text-3xl font-black">{tier.discount}%</p>
-              <p className="text-slate text-sm">de descuento al alcanzar <span className="text-ghost font-semibold">{tier.kg} kg</span> entregados</p>
+              <p className="text-slate text-sm">de descuento al alcanzar <span className="text-ghost font-semibold">{tier.kg} kg</span> acumulados</p>
             </div>
           ))}
         </div>

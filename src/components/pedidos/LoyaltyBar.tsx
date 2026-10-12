@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { NexoOrder } from '@/types/casillero'
-import { calculateLoyalty, MILESTONES } from '@/lib/loyalty'
+import { calculateLoyalty, MILESTONES, BILLABLE_STATUSES } from '@/lib/loyalty'
 
 const BRAND   = '#C97B3A'
 const GREEN   = '#16a34a'
@@ -24,17 +24,14 @@ export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
   // En mobile arranca plegado (ocupa mucho alto); en desktop siempre se ve completo
   const [open, setOpen] = useState(false)
   const { cycleKg, milestoneIdx } = calculateLoyalty(orders)
-  const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
   const totalHistoricalKg = orders
-    .filter(o => BILLABLE.includes(o.status) && o.peso != null)
+    .filter(o => BILLABLE_STATUSES.includes(o.status) && o.peso != null)
     .reduce((sum, o) => sum + o.peso!, 0)
-  const next          = MILESTONES[milestoneIdx]
-  const activeDiscount = milestoneIdx > 0 ? MILESTONES[milestoneIdx - 1].pct : null
-  const fillPx         = Math.min(cycleKg / 50, 1) * EFF_H
-  const kgToNext       = (next.kg - cycleKg).toFixed(1)
-  const summary        = activeDiscount
-    ? `✦ ${activeDiscount}% activo`
-    : cycleKg > 0 ? `${kgToNext} kg más → ${next.pct}% off` : 'Empezá a acumular'
+  const next     = MILESTONES[milestoneIdx]
+  const reached  = milestoneIdx > 0 ? MILESTONES[milestoneIdx - 1] : null  // último hito del ciclo actual
+  const fillPx   = Math.min(cycleKg / 50, 1) * EFF_H
+  const kgToNext = Math.max(0, next.kg - cycleKg).toFixed(1)
+  const summary  = totalHistoricalKg > 0 ? `${kgToNext} kg más → ${next.pct}% off` : 'Empezá a acumular'
 
   return (
     <div className="rounded-2xl border border-black/[0.06] bg-midnight p-4 lg:p-5 dark:border-white/10">
@@ -57,27 +54,27 @@ export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
 
       <div className={`${open ? 'block' : 'hidden'} lg:block mt-3`}>
 
-      {/* Active discount badge */}
-      {activeDiscount ? (
+      {/* Último hito alcanzado en el ciclo */}
+      {reached ? (
         <div className="rounded-xl px-4 py-3 mb-3 text-center"
              style={{ background: 'rgba(201,123,58,0.12)', border: '1px solid rgba(201,123,58,0.25)' }}>
-          <p className="text-xs text-slate">Descuento activo</p>
-          <p className="text-4xl font-bold leading-tight" style={{ color: BRAND }}>{activeDiscount}%</p>
-          <p className="text-xs" style={{ color: BRAND }}>descuento</p>
+          <p className="text-xs text-slate">Nivel alcanzado</p>
+          <p className="text-3xl font-bold leading-tight" style={{ color: BRAND }}>{reached.label}</p>
+          <p className="text-xs" style={{ color: BRAND }}>{reached.pct}% en el pedido que cruzó los {reached.kg} kg</p>
         </div>
       ) : (
         <p className="text-ghost font-semibold text-sm mb-3 leading-snug">
-          ¡Empezá a acumular<br />con tu primer envío!
+          {totalHistoricalKg > 0
+            ? <>¡Vas sumando kg para<br />tu próximo descuento!</>
+            : <>¡Empezá a acumular<br />con tu primer envío!</>}
         </p>
       )}
 
       {/* kg to next */}
-      {cycleKg < 50 && (
-        <p className="text-sm text-slate mb-4">
-          {kgToNext} kg más →{' '}
-          <span className="font-semibold" style={{ color: BRAND }}>{next.pct}% off</span>
-        </p>
-      )}
+      <p className="text-sm text-slate mb-4">
+        {kgToNext} kg más →{' '}
+        <span className="font-semibold" style={{ color: BRAND }}>{next.pct}% off</span>
+      </p>
 
       {/* Vertical bar */}
       <div className="relative" style={{ height: BAR_H }}>
@@ -169,7 +166,7 @@ export default function LoyaltyBar({ orders }: { orders: NexoOrder[] }) {
       </div>
 
       <p className="text-slate text-[10px] mt-1">
-        ⓘ Solo cuentan pedidos <span className="text-ghost font-semibold">Entregados</span>. El descuento aplica al alcanzar un hito.
+        ⓘ Cada kilo suma. El descuento aplica al pedido que cruza cada hito; después de Oro, volvés a empezar.
       </p>
       </div>
     </div>
