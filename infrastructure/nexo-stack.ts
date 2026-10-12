@@ -471,9 +471,10 @@ export class NexoStack extends cdk.Stack {
                 ...(body.deliverySenas   && { deliverySenas:   body.deliverySenas.trim() }),
               }
               await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall(item) }))
-              // Enviar email de confirmación al usuario (asíncrono, no bloquea respuesta)
+              // Enviar email de confirmación al usuario. InvocationType 'Event' solo encola (ms), pero hay que
+              // esperarlo: si el handler retorna antes, Lambda congela el proceso y la invocación nunca sale.
               if (item.userEmail) {
-                lambdaClient.send(new InvokeCommand({
+                await lambdaClient.send(new InvokeCommand({
                   FunctionName: process.env.EMAIL_FUNCTION_NAME,
                   InvocationType: 'Event',
                   Payload: Buffer.from(JSON.stringify({
