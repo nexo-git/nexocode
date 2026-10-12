@@ -57,3 +57,22 @@ export function calculateLoyalty(orders: NexoOrder[]): LoyaltyResult {
 
   return { discountMap, cycleKg, milestoneIdx }
 }
+
+export interface OrderAmount {
+  base: number   // USD antes del descuento
+  pct: number    // % Nexo Fiel aplicado (0 si no hay)
+  final: number  // USD a cobrar
+}
+
+// Monto a cobrar de un pedido. Si el backend ya guardó el descuento (al pasar a Bodega CR),
+// manda ese: es el mismo que va en el correo. Si no, se estima con calculateLoyalty.
+export function orderAmount(order: NexoOrder, estimatedPct?: number): OrderAmount | null {
+  const base = order.totalPagado ?? order.totalBase
+  if (base == null) return null
+  const pct = order.discountPct ?? estimatedPct ?? 0
+  // Si el admin corrigió el peso después de Bodega CR, totalFinal quedó viejo: recalcular
+  const final = order.totalFinal != null && order.totalBase === base
+    ? order.totalFinal
+    : Math.round(base * (1 - pct / 100) * 100) / 100
+  return { base, pct, final }
+}

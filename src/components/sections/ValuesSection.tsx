@@ -24,7 +24,7 @@ const values = [
   {
     icon: Shield,
     title: 'Tu paquete, seguro',
-    description: 'Cada paquete es una responsabilidad. Manejamos tu carga con cuidado desde Miami hasta tu puerta.',
+    description: 'Cada paquete es una responsabilidad. Manejamos tu carga con cuidado desde Los Ángeles hasta tu puerta.',
   },
 ]
 

@@ -13,7 +13,7 @@ const testimonials = [
     name: 'Carlos Jiménez',
     location: 'Alajuela, CR',
     avatar: 'CJ',
-    quote: 'Llevo 8 meses usando nexo para importar partes para mi taller. El precio es justo y el WhatsApp siempre responde. Es como tener un amigo en Miami.',
+    quote: 'Llevo 8 meses usando nexo para importar partes para mi taller. El precio es justo y el WhatsApp siempre responde. Es como tener un amigo en Los Ángeles.',
     rating: 5,
   },
   {

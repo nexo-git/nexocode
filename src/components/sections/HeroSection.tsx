@@ -78,8 +78,8 @@ export default function HeroSection() {
 
                 <div className="flex items-center gap-3 mb-5">
                   <div className="text-center shrink-0">
-                    <p className="text-ghost font-black text-base">MIA</p>
-                    <p className="text-slate text-xs mt-0.5">Miami, FL</p>
+                    <p className="text-ghost font-black text-base">LAX</p>
+                    <p className="text-slate text-xs mt-0.5">Los Ángeles, CA</p>
                   </div>
                   <div className="flex-1 flex items-center gap-1.5">
                     <div className="flex-1 h-px bg-gradient-to-r from-cyan/20 to-cyan/50" />

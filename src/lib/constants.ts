@@ -27,10 +27,9 @@ export const CR_PROVINCES = [
 ]
 
 export const US_ORIGIN_CITIES = [
-  'Miami, FL',
+  'Los Angeles, CA',
   'Orlando, FL',
   'New York, NY',
-  'Los Angeles, CA',
   'Houston, TX',
   'Chicago, IL',
 ]

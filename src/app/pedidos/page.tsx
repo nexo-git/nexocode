@@ -10,7 +10,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import LoyaltyBar from '@/components/pedidos/LoyaltyBar'
-import { calculateLoyalty } from '@/lib/loyalty'
+import { calculateLoyalty, orderAmount } from '@/lib/loyalty'
 import type { NexoUser, NexoOrder, NexoAddress } from '@/types/casillero'
 
 const statusLabel: Record<string, { label: string; color: string }> = {
@@ -131,6 +131,9 @@ export default function PedidosPage() {
     setTimeout(() => { setShowReviewModal(false); setReviewDone(false); setReviewComment('') }, 2000)
   }
 
+  const sinpeAmount = sinpeOrder ? orderAmount(sinpeOrder, discountMap.get(sinpeOrder.orderId)) : null
+  const sinpeTotal  = sinpeAmount && sinpeAmount.final > 0 ? sinpeAmount : null
+
   const inputClass = 'w-full bg-space-black border border-white/10 rounded-xl px-4 py-3 text-ghost placeholder-slate focus:outline-none focus:border-cyan/60 text-sm'
 
   return (
@@ -189,10 +192,10 @@ export default function PedidosPage() {
                   { label: 'Teléfono', value: '60716066' },
                   { label: 'Nombre', value: 'Alejandro Morales Sandi' },
                   { label: 'Descripción', value: `nexo-${sinpeOrder.trackingNumber}` },
-                  ...(sinpeOrder.totalPagado ? [{ label: 'Monto (USD)', value: `$${sinpeOrder.totalPagado.toFixed(2)}` }] : []),
-                  ...(sinpeOrder.totalPagado && tipoCambio ? [{
+                  ...(sinpeTotal ? [{ label: 'Monto (USD)', value: `$${sinpeTotal.final.toFixed(2)}` }] : []),
+                  ...(sinpeTotal && tipoCambio ? [{
                     label: 'Monto en colones',
-                    value: `₡${Math.round(sinpeOrder.totalPagado * tipoCambio.venta).toLocaleString('es-CR')}`,
+                    value: `₡${Math.round(sinpeTotal.final * tipoCambio.venta).toLocaleString('es-CR')}`,
                   }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between bg-space-black rounded-xl px-4 py-3">
@@ -214,8 +217,13 @@ export default function PedidosPage() {
                 ))}
 
                 {/* Estado del tipo de cambio */}
-                {sinpeOrder.totalPagado && (
-                  <div className="px-1">
+                {sinpeTotal && (
+                  <div className="px-1 space-y-1">
+                    {sinpeTotal.pct > 0 && (
+                      <p className="text-cyan text-xs">
+                        ✦ Incluye {sinpeTotal.pct}% de descuento Nexo Fiel (antes ${sinpeTotal.base.toFixed(2)})
+                      </p>
+                    )}
                     {tcLoading ? (
                       <p className="text-slate text-xs animate-pulse">Consultando tipo de cambio...</p>
                     ) : tipoCambio ? (
@@ -402,7 +410,8 @@ export default function PedidosPage() {
                 <div className="space-y-3">
                   {sortedOrders.map((order) => {
                     const st       = statusLabel[order.status] ?? statusLabel.en_ruta
-                    const discount = discountMap.get(order.orderId)
+                    const amount   = orderAmount(order, discountMap.get(order.orderId))
+                    const discount = amount?.pct || undefined
                     return (
                       <div key={order.orderId} className="bg-midnight border border-white/5 rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                         <div className="flex-1 min-w-0">
@@ -431,16 +440,16 @@ export default function PedidosPage() {
                             {order.peso != null && (
                               <span className="text-xs text-ghost/60">{order.peso} kg</span>
                             )}
-                            {order.totalPagado != null && (
+                            {amount && (
                               discount ? (
                                 <span className="flex items-center gap-1.5">
-                                  <span className="line-through text-slate text-xs">${order.totalPagado.toFixed(2)}</span>
+                                  <span className="line-through text-slate text-xs">${amount.base.toFixed(2)}</span>
                                   <span className="text-xs font-semibold text-status-green">
-                                    ${(order.totalPagado * (1 - discount / 100)).toFixed(2)}
+                                    ${amount.final.toFixed(2)}
                                   </span>
                                 </span>
                               ) : (
-                                <span className="text-xs font-medium text-cyan">${order.totalPagado.toFixed(2)}</span>
+                                <span className="text-xs font-medium text-cyan">${amount.final.toFixed(2)}</span>
                               )
                             )}
                           </div>

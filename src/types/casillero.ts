@@ -12,6 +12,10 @@ export interface NexoOrder {
   status: OrderStatus
   peso?: number
   totalPagado?: number
+  // Los guarda el backend al pasar a Bodega CR (Nexo Fiel); son los que van en el correo de cobro
+  totalBase?: number
+  discountPct?: number
+  totalFinal?: number
   updatedAt: string
   deliveryProvince?: string
   deliveryCanton?: string

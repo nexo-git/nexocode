@@ -578,19 +578,44 @@ export class NexoStack extends cdk.Stack {
                 let discountPct = 0
                 let totalBase = updated.totalPagado || 0
                 let totalFinal = totalBase
-                if (body.status === 'bodega_cr' && updated.userEmail && totalBase) {
+                if (body.status === 'bodega_cr' && updated.userId && totalBase) {
                   try {
-                    const scanResult = await dynamo.send(new ScanCommand({
-                      TableName: TABLE_NAME,
-                      FilterExpression: 'userEmail = :e AND #st IN (:s1, :s2, :s3)',
-                      ExpressionAttributeNames: { '#st': 'status' },
-                      ExpressionAttributeValues: marshall({ ':e': updated.userEmail, ':s1': 'bodega_cr', ':s2': 'pagado_en_ruta', ':s3': 'entregado' }),
-                      ProjectionExpression: 'peso',
-                    }))
-                    const totalKg = (scanResult.Items || []).map(i => unmarshall(i).peso || 0).reduce((a, b) => a + b, 0)
-                    if (totalKg >= 50) discountPct = 7
-                    else if (totalKg >= 25) discountPct = 5
-                    else if (totalKg >= 10) discountPct = 3
+                    // Nexo Fiel: misma regla que src/lib/loyalty.ts (calculateLoyalty).
+                    // El descuento aplica solo al pedido que alcanza o supera un hito
+                    // y el contador vuelve a 0 kg despues de llegar a Oro.
+                    const MILESTONES = [{ kg: 10, pct: 3 }, { kg: 25, pct: 5 }, { kg: 50, pct: 7 }]
+                    const BILLABLE = ['bodega_cr', 'pendiente_pago', 'pagado_en_ruta', 'entregado']
+                    const userOrders = []
+                    let lastKey
+                    do {
+                      const page = await dynamo.send(new QueryCommand({
+                        TableName: TABLE_NAME,
+                        IndexName: 'userId-index',
+                        KeyConditionExpression: 'userId = :uid',
+                        ExpressionAttributeValues: marshall({ ':uid': updated.userId }),
+                        ...(lastKey ? { ExclusiveStartKey: lastKey } : {}),
+                      }))
+                      userOrders.push(...(page.Items || []).map(i => unmarshall(i)))
+                      lastKey = page.LastEvaluatedKey
+                    } while (lastKey)
+                    // El GSI es eventualmente consistente: usar la version recien actualizada de este pedido
+                    const billable = userOrders
+                      .filter(o => o.orderId !== orderId)
+                      .concat(updated)
+                      .filter(o => BILLABLE.includes(o.status) && o.peso != null)
+                      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                    let cycleKg = 0
+                    let milestoneIdx = 0
+                    for (const o of billable) {
+                      cycleKg += o.peso
+                      let earned = 0
+                      while (milestoneIdx < MILESTONES.length && cycleKg >= MILESTONES[milestoneIdx].kg) {
+                        earned = MILESTONES[milestoneIdx].pct
+                        milestoneIdx++
+                        if (milestoneIdx >= MILESTONES.length) { cycleKg = 0; milestoneIdx = 0; break }
+                      }
+                      if (o.orderId === orderId) { discountPct = earned; break }
+                    }
                     totalFinal = Math.round(totalBase * (1 - discountPct / 100) * 100) / 100
                   } catch (e) {
                     console.error(JSON.stringify({ event: 'LOYALTY_CALC_ERROR', error: e.message }))

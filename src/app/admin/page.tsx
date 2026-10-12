@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getAllOrders, updateOrderStatus, updateOrder, createOrderAdmin, deleteOrder } from '@/lib/orders'
-import { calculateLoyalty } from '@/lib/loyalty'
+import { calculateLoyalty, orderAmount } from '@/lib/loyalty'
 import { getReviews, deleteReview } from '@/lib/reviews'
 import {
   Search, UserCog, Trash2, Edit, Package, Plus, X, Check, MapPin, Copy, Star,
@@ -299,7 +299,8 @@ export default function AdminPage() {
             </thead>
             <tbody>
               {rows.map((order) => {
-                const discount = allDiscounts.get(order.orderId)
+                const amount   = orderAmount(order, allDiscounts.get(order.orderId))
+                const discount = amount?.pct || undefined
                 return (
                   <tr key={order.orderId} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="px-5 py-4">
@@ -368,16 +369,16 @@ export default function AdminPage() {
                       />
                     </td>
                     <td className="px-5 py-4 hidden xl:table-cell">
-                      {order.totalPagado != null ? (
+                      {amount ? (
                         discount ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="line-through text-slate text-xs">${order.totalPagado.toFixed(2)}</span>
+                            <span className="line-through text-slate text-xs">${amount.base.toFixed(2)}</span>
                             <span className="text-xs font-semibold text-status-green">
-                              ${(order.totalPagado * (1 - discount / 100)).toFixed(2)}
+                              ${amount.final.toFixed(2)}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-ghost text-xs">${order.totalPagado.toFixed(2)}</span>
+                          <span className="text-ghost text-xs">${amount.final.toFixed(2)}</span>
                         )
                       ) : (
                         <span className="text-slate text-xs">—</span>

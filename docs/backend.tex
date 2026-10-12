@@ -896,27 +896,33 @@ vía SES. Retorna siempre el evento original.
 
 \subsection{Programa de Fidelidad --- Nexo Fiel}
 
-Los descuentos se calculan automáticamente al cambiar status a \texttt{bodega\_cr},
-sumando el peso de todos los pedidos del usuario en statuses billables:
+Los descuentos se calculan automáticamente al cambiar status a \texttt{bodega\_cr}.
+Se recorren los pedidos del usuario en statuses billables, ordenados por fecha, acumulando kg
+en un ciclo. Es la misma regla que \texttt{calculateLoyalty} en \texttt{src/lib/loyalty.ts}:
 
 \begin{table}[H]
 \centering
 \begin{tabular}{@{}lll@{}}
 \toprule
-\textbf{Kg acumulados} & \textbf{Descuento} & \textbf{Tier} \\
+\textbf{Hito del ciclo} & \textbf{Descuento} & \textbf{Tier} \\
 \midrule
-$< 10$ kg & 0\% & Sin descuento \\
-$\geq 10$ kg & 3\% & Nexo Fiel Bronce \\
-$\geq 25$ kg & 5\% & Nexo Fiel Plata \\
-$\geq 50$ kg & 7\% & Nexo Fiel Oro \\
+$10$ kg & 3\% & Nexo Fiel Bronce \\
+$25$ kg & 5\% & Nexo Fiel Plata \\
+$50$ kg & 7\% & Nexo Fiel Oro \\
 \bottomrule
 \end{tabular}
 \caption{Tiers del programa Nexo Fiel}
 \end{table}
 
-Statuses que acumulan kg: \texttt{bodega\_cr}, \texttt{pagado\_en\_ruta}, \texttt{entregado}.
-El pedido actual ya está en \texttt{bodega\_cr} cuando se hace el Scan, por lo que
-sus kg están incluidos en el acumulado (correcto por diseño).
+\begin{itemize}
+  \item El descuento aplica solo al pedido que alcanza o supera un hito, no a todos los envíos.
+  \item Al llegar a Oro (50 kg) el contador vuelve a 0 kg y el ciclo empieza otra vez en Bronce.
+  \item Statuses que acumulan kg: \texttt{bodega\_cr}, \texttt{pendiente\_pago}, \texttt{pagado\_en\_ruta}, \texttt{entregado}.
+  \item Los pedidos del usuario se leen con un Query paginado sobre \texttt{userId-index}. Como el GSI es
+        eventualmente consistente, el pedido actual se toma de la respuesta del \texttt{UpdateItem}.
+  \item Se guardan \texttt{totalBase}, \texttt{discountPct} y \texttt{totalFinal} en el pedido; la web
+        (tarjeta del pedido, modal de SINPE y admin) y el correo de cobro usan esos valores.
+\end{itemize}
 
 \subsection{Permisos IAM de las Lambdas}
 

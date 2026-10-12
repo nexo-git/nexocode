@@ -5,13 +5,13 @@ const steps = [
     number: '01',
     icon: ShoppingCart,
     title: 'Comprá en USA',
-    description: 'Usá nuestra dirección en Miami como destino de entrega en cualquier tienda de USA.',
+    description: 'Usá nuestra dirección en Los Ángeles como destino de entrega en cualquier tienda de USA.',
   },
   {
     number: '02',
     icon: Package,
     title: 'Llegá a nuestra bodega',
-    description: 'Tu paquete llega a nuestra bodega en Miami. Te notificamos de inmediato con foto y peso.',
+    description: 'Tu paquete llega a nuestra bodega en Los Ángeles. Te avisamos por correo en cada etapa del envío.',
   },
   {
     number: '03',

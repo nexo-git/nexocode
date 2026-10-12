@@ -26,9 +26,9 @@ const contactItems = [
   },
   {
     icon: MapPin,
-    label: 'Bodega Miami',
-    value: 'Miami, Florida, USA',
-    description: 'Dirección exacta se entrega al registrar tu primera compra.',
+    label: 'Bodega Los Ángeles',
+    value: 'Los Ángeles, California, USA',
+    description: 'Tu dirección exacta aparece al abrir tu casillero gratis.',
     cta: null,
   },
 ]
