@@ -1,7 +1,15 @@
+import type { Metadata } from 'next'
 import { MessageCircle, Package2 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import { whatsappLink } from '@/lib/constants'
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Seguí tu paquete de USA a Costa Rica',
+  description: 'Revisá el estado de tus envíos desde tu cuenta y recibí un correo en cada etapa: en ruta, aduana, bodega en Costa Rica y entrega.',
+  path: '/tracking',
+})
 
 export default function TrackingPage() {
   return (

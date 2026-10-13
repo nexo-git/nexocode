@@ -1,10 +1,12 @@
 import LegalPage from '@/components/legal/LegalPage'
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Política de Privacidad — nexo',
+export const metadata: Metadata = pageMetadata({
+  title: 'Política de Privacidad',
   description: 'Política de privacidad y tratamiento de datos personales de NexoCode LLC.',
-}
+  path: '/privacidad',
+})
 
 const sectionsEs = [
   {

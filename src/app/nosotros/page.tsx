@@ -2,11 +2,13 @@ import ValuesSection from '@/components/sections/ValuesSection'
 import ContactSection from '@/components/sections/ContactSection'
 import CtaBannerSection from '@/components/sections/CtaBannerSection'
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Quiénes somos — nexo',
-  description: 'Conocé el equipo detrás de nexo, nuestra misión y por qué somos el courier de referencia USA–CR.',
-}
+export const metadata: Metadata = pageMetadata({
+  title: 'Courier en Guápiles, Costa Rica',
+  description: 'Conocé a nexo, el courier de Guápiles que trae tus compras de Estados Unidos con tarifa clara, asistente 24/7 por WhatsApp y personas reales.',
+  path: '/nosotros',
+})
 
 const missions = [
   {

@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 import { Suspense } from 'react'
 import ResetPasswordForm from '@/components/casillero/ResetPasswordForm'
 
-export const metadata: Metadata = {
-  title: 'Nueva contraseña — nexo',
-}
+export const metadata: Metadata = pageMetadata({ title: 'Nueva contraseña', path: '/reset-password', noindex: true })
 
 export default function ResetPasswordPage() {
   return (

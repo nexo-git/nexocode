@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 import ForgotPasswordForm from '@/components/casillero/ForgotPasswordForm'
 
-export const metadata: Metadata = {
-  title: 'Recuperar contraseña — nexo',
-}
+export const metadata: Metadata = pageMetadata({ title: 'Recuperar contraseña', path: '/forgot-password', noindex: true })
 
 export default function ForgotPasswordPage() {
   return (

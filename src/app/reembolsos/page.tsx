@@ -1,10 +1,12 @@
 import LegalPage from '@/components/legal/LegalPage'
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Política de Reembolsos — nexo',
+export const metadata: Metadata = pageMetadata({
+  title: 'Política de Reembolsos',
   description: 'Política de reembolsos y compensaciones de NexoCode LLC para servicios de courier USA → Costa Rica.',
-}
+  path: '/reembolsos',
+})
 
 const sectionsEs = [
   {

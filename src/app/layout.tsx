@@ -4,6 +4,7 @@ import './globals.css'
 import { SiteHeader, SiteFooter } from '@/components/layout/SiteChrome'
 import AmplifyProvider from '@/components/AmplifyProvider'
 import ThemeProvider from '@/components/ThemeProvider'
+import { SITE_URL, SITE_NAME, HOME_TITLE, HOME_DESCRIPTION } from '@/lib/seo'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,14 +19,19 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'nexo — Tu puente entre dos mundos',
-  description: 'Courier y envíos USA → Costa Rica. Seguimiento de cada envío, $14 por kilo y asistente 24/7 por WhatsApp.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: HOME_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: HOME_DESCRIPTION,
   icons: {
     icon: '/XNEX0.png',
   },
   openGraph: {
-    title: 'nexo — Tu puente entre dos mundos',
-    description: 'Envíos USA → Costa Rica con transparencia total.',
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    siteName: SITE_NAME,
     locale: 'es_CR',
     type: 'website',
   },

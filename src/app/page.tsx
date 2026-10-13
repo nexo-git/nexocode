@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import HeroSection from '@/components/sections/HeroSection'
 import StoreLogosSection from '@/components/sections/StoreLogosSection'
 import HowItWorksSection from '@/components/sections/HowItWorksSection'
@@ -5,6 +6,14 @@ import NexoFielSection from '@/components/sections/NexoFielSection'
 import ValuesSection from '@/components/sections/ValuesSection'
 import ReviewsSection from '@/components/sections/ReviewsSection'
 import CtaBannerSection from '@/components/sections/CtaBannerSection'
+import { pageMetadata, HOME_TITLE, HOME_DESCRIPTION } from '@/lib/seo'
+
+export const metadata: Metadata = pageMetadata({
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  path: '/',
+  absoluteTitle: true,
+})
 
 const stats = [
   { value: '$14/kg', label: 'tarifa por kilo' },

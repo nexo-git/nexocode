@@ -1,10 +1,12 @@
 import LegalPage from '@/components/legal/LegalPage'
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Términos y Condiciones — nexo',
+export const metadata: Metadata = pageMetadata({
+  title: 'Términos y Condiciones',
   description: 'Términos y condiciones del servicio de courier USA → Costa Rica de NexoCode LLC.',
-}
+  path: '/terminos',
+})
 
 const sectionsEs = [
   {

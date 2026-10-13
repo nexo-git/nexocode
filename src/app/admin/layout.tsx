@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next'
 // Manifest solo en /admin: habilita la app Android de administración (TWA)
 // sin ofrecerle "instalar app" a los clientes en el sitio público.
 export const metadata: Metadata = {
-  title: 'nexo Admin',
+  title: { absolute: 'nexo Admin' },
   manifest: '/admin.webmanifest',
 }
 
